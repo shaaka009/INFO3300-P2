@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>US Tech Market</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Raleway:400,700" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css">
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+
+    <style>
+        p {
+            margin: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1
+        style="font-size: 36px; font-family: 'Lato', sans-serif; font-weight: 700; text-align: center; margin-top: 20px;">
+        TODO: P2 Title</h1>
+    <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
+        Chart 1: NFL Drafts vs Location</h2>
+    <p id="chart1">
+        <script>
+            const width = 960;
+            const height = 620;
+
+            const svg = d3.select('#chart1')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .style("font-size", "24px")
+                .style("font-family", "Raleway, sans-serif")
+                .text("NFL Drafts vs Location")
+
+            const path = d3.geoPath();
+            const projection = d3
+                .geoAlbersUsa()
+                .scale(1280)
+                .translate([480, 300]);
+
+            Promise.all([
+                d3.csv('../nfl_draft_prospects.csv'),
+                d3.csv('../schools_data.csv'),
+            ]).then(([nflData, schoolsData]) => {
+
+                // TODO: Change with schools instead of cities
+                /** citiesSalaries.forEach((value, city) => {
+                    cityJson = JSON.parse(city)
+                    const stateName = stateNameId.get(cityJson.stateId)
+                    const stats = cityData.find(d => d["City"] === cityJson.city && d["State"] === stateName);
+                    // If we cannot find the city stat (likely it is not a US city, then we ignore plotting such salary data)
+                    if (!stats) return;
+                    const newValue = { ...value, longitude: +stats["Longitude"], latitude: +stats["Latitude"], landArea: stats["Land Area (sq mi)"] }
+                    citiesSalaries.set(city, newValue)
+                }); **/
+
+
+                // Color hue scale
+                /** let colorScale = d3
+                    .scaleSequential()
+                    .domain(salaryExtent)
+                    .interpolator(d3.interpolateRgb("#ADD8E6", "#003366")); **/
+
+                // Fetch US topojson
+                d3.json("../us-10m.json").then(handleUsLoaded);
+
+                function handleUsLoaded(us) {
+                    svg.append("g")
+                        .attr("class", "states")
+                        .selectAll("path")
+                        .data(topojson.feature(us, us.objects.states).features)
+                        .enter().append("path")
+                        .attr("fill", "white")
+                        .attr("stroke", "darkgray")
+                        .attr("d", path)
+
+                    svg.append("g")
+                        .attr("class", "counties")
+                        .selectAll("path")
+                        .data(topojson.feature(us, us.objects.counties).features)
+                        .enter().append("path")
+                        .attr("fill", "white")
+                        .attr("stroke", "lightgray")
+                        .attr("stroke-width", 0.5)
+                        .attr("opacity", 0.5)
+                        .attr("d", path)
+                }
+            });
+        </script>
+    </p>
+
+
+    <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
+        Chart 2: TODO</h2>
+    <p id="chart2">
+        <svg id="chart2" width="1000" height="800"></svg>
+        <script>
+        </script>
+    </p>
+
+    <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
+        Chart 3: TODO</h2>
+    <p id="chart3">
+        <script>
+        </script>
+    </p>
+
+    <p style="font-family: 'Raleway', sans-serif;">
+    <h4 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
+        Sources:</h4>
+    <ul>
+        <li>Kaggle data set with nfl draft prospects:
+            <a
+                href="https://www.kaggle.com/datasets/jacklichtenstein/espn-nfl-draft-prospect-data/data?select=nfl_draft_prospects.csv">https://www.kaggle.com/datasets/jacklichtenstein/espn-nfl-draft-prospect-data/data?select=nfl_draft_prospects.csv</a>
+        <li>School geographic data: <a href="https://www.kaggle.com/datasets/sumithbhongale/american-university-data-ipeds-dataset
+">https://www.kaggle.com/datasets/sumithbhongale/american-university-data-ipeds-dataset
+            </a>
+        </li>
+        <li> D3 Documentation for relevant functions and resources:
+            <a href="https://devdocs.io/d3/"> https://devdocs.io/d3/
+        </li>
+
+        </li>
+    </ul>
+
+    </p>
+</body>
+
+</html>
