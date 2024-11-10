@@ -28,8 +28,8 @@
     <p id="chart1"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <script>
-            const svgWidth = 960;
-            const svgHeight = 620;
+            const svgWidth = 1200;
+            const svgHeight = 650;
             const svg = d3.select('#chart1')
                 .append('svg')
                 .attr('width', svgWidth)
@@ -45,7 +45,7 @@
                 .style("font-family", "Raleway, sans-serif")
                 .text(`${defaultYear} NFL Drafts`)
 
-            const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+            const margin = { top: 20, right: 100, bottom: 20, left: 20 };
             const mapWidth = svgWidth - margin.left - margin.right;
             const mapHeight = svgHeight - margin.top - margin.bottom;
             const map = svg.append("g")
@@ -142,10 +142,8 @@
 
                     // Update the color scale based on the counts for the selected year
                     const colorScale = d3.
-                        scaleSequential(d3.interpolateCool)
-                        .domain([0, d3.max(Object.values(stateCounts)) || 1]); // TODO: Change to use instead of values, it's the length of the values
-
-                    // TODO: Update legend that shows the number of players concentration in corr. to the color scale
+                        scaleSequential(d3.interpolateViridis)
+                        .domain([0, d3.max(Object.values(stateCounts)) || 1]);
 
                     // Draw and color states
                     const statePaths = map.selectAll("path.state").data(states.features)
@@ -163,6 +161,62 @@
                             const count = stateCounts[stateAbbr] || 0;
                             return colorScale(count);
                         });
+
+                    // Create legend
+                    const legendWidth = 30;
+                    const legendHeight = 400;
+
+                    // Remove existing legend before updating
+                    svg.select(".legend").remove();
+
+                    const g = svg
+                        .append('g')
+                        .attr('class', 'legend')
+                        .attr('transform', `translate(${mapWidth + 30}, 50)`);
+
+                    const defs = svg.append("defs");
+                    const gradient = defs.append("linearGradient")
+                        .attr("id", "legend-gradient")
+                        .attr("x1", "0%")
+                        .attr("y1", "100%")
+                        .attr("x2", "0%")
+                        .attr("y2", "0%");
+
+                    const colorDomain = colorScale.domain();
+                    gradient.selectAll("stop")
+                        .data(colorDomain)
+                        .enter()
+                        .append("stop")
+                        .attr("offset", (d, i) => `${(i / (colorDomain.length - 1)) * 100}%`)
+                        .attr("stop-color", d => colorScale(d));
+
+                    g.append("rect")
+                        .attr("width", legendWidth)
+                        .attr("height", legendHeight)
+                        .style("fill", "url(#legend-gradient)");
+
+                    const legendScale = d3.scaleLinear()
+                        .domain([colorDomain[0], colorDomain[colorDomain.length - 1]])
+                        .range([legendHeight, 0]);
+
+                    const legendAxis = d3.axisRight(legendScale)
+                        .ticks(5)
+                        .tickSize(10)
+                        .tickFormat(d => d3.format(".0f")(d));
+
+                    g.append("g")
+                        .attr("class", "legend-axis")
+                        .attr("transform", `translate(${legendWidth}, 0)`)
+                        .call(legendAxis)
+                        .select(".domain").remove();
+
+                    g.append("text")
+                        .attr("class", "legend-title")
+                        .attr("x", legendWidth / 2)
+                        .attr("y", -10)
+                        .attr("text-anchor", "middle")
+                        .style("font-size", "12px")
+                        .text("Number of NFL Draftees");
                 }
 
                 // Default update
