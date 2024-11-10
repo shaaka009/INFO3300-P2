@@ -43,60 +43,34 @@
                 .style("font-family", "Raleway, sans-serif")
                 .text("NFL Drafts vs Location")
 
-            const path = d3.geoPath();
-            const projection = d3
-                .geoAlbersUsa()
-                .scale(1280)
-                .translate([480, 300]);
+            const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+            const mapWidth = width - margin.left - margin.right;
+            const mapHeight = height - margin.top - margin.bottom;
+            const map = svg.append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            Promise.all([
-                d3.csv('../nfl_draft_prospects.csv'),
-                d3.csv('../schools_data.csv'),
-            ]).then(([nflData, schoolsData]) => {
+            const requestData = async () => {
+                const [nflData, schoolsData, us] =
+                    await Promise.all([
+                        d3.csv('../nfl_draft_prospects.csv'),
+                        d3.csv('../schools_data.csv'),
+                        d3.json("../us-smaller.json")
+                    ])
 
-                // TODO: Change with schools instead of cities
-                /** citiesSalaries.forEach((value, city) => {
-                    cityJson = JSON.parse(city)
-                    const stateName = stateNameId.get(cityJson.stateId)
-                    const stats = cityData.find(d => d["City"] === cityJson.city && d["State"] === stateName);
-                    // If we cannot find the city stat (likely it is not a US city, then we ignore plotting such salary data)
-                    if (!stats) return;
-                    const newValue = { ...value, longitude: +stats["Longitude"], latitude: +stats["Latitude"], landArea: stats["Land Area (sq mi)"] }
-                    citiesSalaries.set(city, newValue)
-                }); **/
+                // Draw us map
+                var states = topojson.feature(us, us.objects.states);     // List of state outlines to fill
+                var projection = d3.geoAlbersUsa().fitSize([mapWidth, mapHeight], states);
+                var path = d3.geoPath().projection(projection);
 
+                // Draw states
+                let statePaths = map.selectAll("path.state").data(states.features)
+                    .join("path")
+                    .attr("class", "state")
+                    .attr("note", d => d.id)  // debugging
+                    .attr("d", path)
+            };
 
-                // Color hue scale
-                /** let colorScale = d3
-                    .scaleSequential()
-                    .domain(salaryExtent)
-                    .interpolator(d3.interpolateRgb("#ADD8E6", "#003366")); **/
-
-                // Fetch US topojson
-                d3.json("../us-10m.json").then(handleUsLoaded);
-
-                function handleUsLoaded(us) {
-                    svg.append("g")
-                        .attr("class", "states")
-                        .selectAll("path")
-                        .data(topojson.feature(us, us.objects.states).features)
-                        .enter().append("path")
-                        .attr("fill", "white")
-                        .attr("stroke", "darkgray")
-                        .attr("d", path)
-
-                    svg.append("g")
-                        .attr("class", "counties")
-                        .selectAll("path")
-                        .data(topojson.feature(us, us.objects.counties).features)
-                        .enter().append("path")
-                        .attr("fill", "white")
-                        .attr("stroke", "lightgray")
-                        .attr("stroke-width", 0.5)
-                        .attr("opacity", 0.5)
-                        .attr("d", path)
-                }
-            });
+            requestData();
         </script>
     </p>
 
@@ -105,13 +79,6 @@
         Chart 2: TODO</h2>
     <p id="chart2">
         <svg id="chart2" width="1000" height="800"></svg>
-        <script>
-        </script>
-    </p>
-
-    <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
-        Chart 3: TODO</h2>
-    <p id="chart3">
         <script>
         </script>
     </p>
