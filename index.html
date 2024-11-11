@@ -51,7 +51,79 @@
             const mapWidth = svgWidth - margin.left - margin.right;
             const mapHeight = svgHeight - margin.top - margin.bottom;
             const map = svg.append("g")
-            const viewport = map.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");;
+            const viewport = map.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // Define slider info and exclude years without data
+            const sliderWidth = 300;
+            const sliderHeight = 10;
+            const minYear = 1967;
+            const maxYear = 2021;
+            const yearsWithoutData = [1988, 1996];
+            const validYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => i + minYear)
+                .filter(year => !yearsWithoutData.includes(year));
+            const sliderContainer = d3.select('#chart1')
+                .append('div')
+                .style('position', 'relative')
+                .style('width', `${sliderWidth}px`)
+                .style('height', `${sliderHeight * 3}px`);
+
+            // Add slider
+            // Slider input element
+            const slider = sliderContainer
+                .append('input')
+                .attr('type', 'range')
+                .attr('min', 0)
+                .attr('max', validYears.length - 1)
+                .attr('step', 1)
+                .attr('value', validYears.length - 1)
+                .style('width', `${sliderWidth}px`)
+                .style('height', `${sliderHeight}px`)
+                .style('cursor', 'pointer')
+                .style('background', '#ddd')
+                .style('outline', 'none')
+                .style('border-radius', '5px')
+                .on('input', function () {
+                    const selectedYearIndex = this.value;
+                    const selectedYear = validYears[selectedYearIndex];
+                    chartTitle.text(`${selectedYear} NFL Drafts`);
+                })
+
+            sliderContainer.append('span')
+                .style('position', 'absolute')
+                .style('top', `${sliderHeight * 1.5}px`)
+                .style('left', '-10px')
+                .text(minYear);
+
+            // Max label
+            sliderContainer.append('span')
+                .style('position', 'absolute')
+                .style('top', `${sliderHeight * 1.5}px`)
+                .style('right', '-15px')
+                .text(maxYear);
+
+            for (let year = minYear; year <= maxYear; year++) {
+                if (!yearsWithoutData.includes(year)) {
+                    const position = ((year - minYear) / (maxYear - minYear)) * sliderWidth;
+
+                    // Add tick label for every 5 years for readability
+                    if (year % 5 === 0 && year > 1970 && year < 2020) {
+                        sliderContainer.append('div')
+                            .style('position', 'absolute')
+                            .style('top', `${sliderHeight * 1.1}px`)
+                            .style('left', `${position}px`)
+                            .style('width', '1px')
+                            .style('height', '8px')
+                            .style('background', '#333');
+                        sliderContainer.append('span')
+                            .style('position', 'absolute')
+                            .style('top', `${sliderHeight * 2}px`)
+                            .style('left', `${position}px`)
+                            .style('transform', 'translateX(-50%)')
+                            .style('font-size', '10px')
+                            .text(year);
+                    }
+                }
+            }
 
             const requestData = async function () {
                 const [nflData, schoolsData, usData, stateIdData, schoolCommonData] = await Promise.all([
@@ -61,86 +133,15 @@
                     d3.csv('state-id.csv'),
                     d3.csv('school_common_names.csv')
                 ]);
-                
-                // Define slider info and exclude years without data
-                const sliderWidth = 300;
-                const sliderHeight = 10;
-                const minYear = 1967;
-                const maxYear = 2021;
-                const yearsWithoutData = [1988, 1996];
-                const validYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => i + minYear)
-                    .filter(year => !yearsWithoutData.includes(year));
-                console.log(validYears);
-                const sliderContainer = d3.select('#chart1')
-                    .append('div')
-                    .style('position', 'relative')
-                    .style('width', `${sliderWidth}px`)
-                    .style('height', `${sliderHeight * 3}px`);
 
-                // Add slider
-                // Slider input element
-                const slider = sliderContainer
-                    .append('input')
-                    .attr('type', 'range')
-                    .attr('min', 0)
-                    .attr('max', validYears.length - 1)
-                    .attr('step', 1)
-                    .attr('value', validYears.length - 1)
-                    .style('width', `${sliderWidth}px`)
-                    .style('height', `${sliderHeight}px`)
-                    .style('cursor', 'pointer')
-                    .style('background', '#ddd')
-                    .style('outline', 'none')
-                    .style('border-radius', '5px')
-                    .on('input', function () {
-                        const selectedYearIndex = this.value;
-                        const selectedYear = validYears[selectedYearIndex];
-                        chartTitle.text(`${selectedYear} NFL Drafts`);
-                    })
-                    .on('pointerup', function () {
-                        const selectedYearIndex = this.value;
-                        const selectedYear = validYears[selectedYearIndex];
+                // Add slider event to update map
+                slider.on('pointerup', function () {
+                    const selectedYearIndex = this.value;
+                    const selectedYear = validYears[selectedYearIndex];
 
-                        // Update only on release to improve performance
-                        updateMapColors(selectedYear);
-                    });
-
-                sliderContainer.append('span')
-                    .style('position', 'absolute')
-                    .style('top', `${sliderHeight * 1.5}px`)
-                    .style('left', '-10px')
-                    .text(minYear);
-
-                // Max label
-                sliderContainer.append('span')
-                    .style('position', 'absolute')
-                    .style('top', `${sliderHeight * 1.5}px`)
-                    .style('right', '-15px')
-                    .text(maxYear);
-
-                for (let year = minYear; year <= maxYear; year++) {
-                    if (!yearsWithoutData.includes(year)) {
-                        const position = ((year - minYear) / (maxYear - minYear)) * sliderWidth;
-
-                        // Add tick label for every 5 years for readability
-                        if (year % 5 === 0 && year > 1970 && year < 2020) {
-                            sliderContainer.append('div')
-                                .style('position', 'absolute')
-                                .style('top', `${sliderHeight * 1.1}px`)
-                                .style('left', `${position}px`)
-                                .style('width', '1px')
-                                .style('height', '8px')
-                                .style('background', '#333');
-                            sliderContainer.append('span')
-                                .style('position', 'absolute')
-                                .style('top', `${sliderHeight * 2}px`)
-                                .style('left', `${position}px`)
-                                .style('transform', 'translateX(-50%)')
-                                .style('font-size', '10px')
-                                .text(year);
-                        }
-                    }
-                }
+                    // Update only on release to improve performance
+                    updateMapColors(selectedYear);
+                });
 
                 const states = topojson.feature(usData, usData.objects.states);
                 const projection = d3.geoAlbersUsa().fitSize([mapWidth, mapHeight], states);
@@ -171,13 +172,12 @@
 
                     if (state) {
                         if (!stateMap.has(draftYear)) stateMap.set(draftYear, {});
-                        if (!stateMap.get(draftYear)[state]) stateMap.get(draftYear)[state] = []
-                        stateMap.get(draftYear)[state].push(
-                            {
-                                player,
-                                playerSchool
-                            }
-                        );
+                        if (!stateMap.get(draftYear)[state]) stateMap.get(draftYear)[state] = { numPlayers: 0, schoolMap: {} }
+                        const { numPlayers, schoolMap } = stateMap.get(draftYear)[state]
+                        const playerSchoolJson = JSON.stringify(playerSchool)
+                        if (!schoolMap[playerSchoolJson]) schoolMap[playerSchoolJson] = []
+                        schoolMap[playerSchoolJson].push(player);
+                        stateMap.get(draftYear)[state] = { numPlayers: numPlayers + 1, schoolMap }
                     }
                 });
 
@@ -190,15 +190,12 @@
                 const updateMapColors = function (selectedYear) {
                     const year = parseInt(selectedYear)
                     const stateDraftees = stateMap.get(year) || {}
-                    const stateCounts = {}
-                    Object.entries(stateDraftees).forEach(([key, value]) => {
-                        stateCounts[key] = value.length
-                    });
 
                     // Update the color scale based on the counts for the selected year
+                    const stateCounts = Object.values(stateDraftees).map(draftee => draftee.numPlayers || 0);
                     const colorScale = d3.
                         scaleSequential(d3.interpolateBlues)
-                        .domain([0, d3.max(Object.values(stateCounts)) || 1]);
+                        .domain([0, d3.max(stateCounts) || 1]);
 
                     // Draw and color states
                     const statePaths = viewport.selectAll("path.state").data(states.features)
@@ -213,7 +210,7 @@
                         .ease(d3.easeCubicInOut)
                         .style("fill", (d) => {
                             const stateAbbr = stateId[d.id];
-                            const count = stateCounts[stateAbbr] || 0;
+                            const count = stateDraftees[stateAbbr]?.numPlayers || 0;
                             return colorScale(count);
                         });
 
@@ -274,6 +271,43 @@
                         .style("font-size", "12px")
                         .text("Number of NFL Draftees");
 
+                    const schoolData = Object.entries(stateDraftees).flatMap(([state, { schoolMap }]) =>
+                        Object.entries(schoolMap).map(([playerSchoolJson, players]) => {
+                            const playerSchool = JSON.parse(playerSchoolJson);
+                            const schoolLongitude = playerSchool["Longitude location of institution"];
+                            const schoolLatitude = playerSchool["Latitude location of institution"];
+                            const schoolProjection = projection([schoolLongitude, schoolLatitude]);
+
+                            return {
+                                state,
+                                schoolLongitude,
+                                schoolLatitude,
+                                schoolProjection,
+                                cx: schoolProjection[0],
+                                cy: schoolProjection[1],
+                                schoolName: playerSchool.Name,  // Include school name for tooltip
+                                players: players  // Include player information
+                            };
+                        })
+                    );
+
+                    // Draw school points with tooltips
+                    const circles = viewport.selectAll("circle.school-point")
+                        .data(schoolData, d => `${d.state}-${d.cx}-${d.cy}`)  // Use a unique key for join
+                        .join(
+                            enter => enter.append("circle")
+                                .attr("class", "school-point")
+                                .attr("r", 2)
+                                .style("fill", "red")
+                                .style("opacity", 0.6)
+                                .transition()
+                                .duration(500)
+                                .ease(d3.easeCubicInOut)
+                                .attr("cx", d => d.cx)
+                                .attr("cy", d => d.cy)
+                        );
+
+                    // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
                     viewport.selectAll(".state").on("click", clicked);
                     viewport.selectAll(".county").on("click", clicked);
 
@@ -293,7 +327,6 @@
                             .translate(translate[0], translate[1])
                             .scale(scale);
                         map.transition().duration(1000).call(zoom.transform, newTransform);
-
                     }
                 }
 
@@ -307,23 +340,17 @@
                 map.call(zoom.transform, d3.zoomIdentity);
 
                 function mapZoomed({ transform }) {
-                    if (transform.k > 1) {
-                        svg.select('.legend').style('opacity', 0); // Hide legend when zoomed in
-                    } else {
-                        svg.select('.legend').style('opacity', 1); // Show legend when zoomed out
-                    }
                     k = transform.k;
-                    
-                    transformFactor = transform
+                    if (k > 1) {
+                        svg.select('.legend').style('opacity', 0);
+                    } else {
+                        svg.select('.legend').style('opacity', 1);
+                    }
+
                     viewport.attr("transform", transform.toString());
-                    viewport.select(".state-outline")
-                        .style("stroke-width", 2 / transform.k);
-                    viewport.select(".county-outline")
-                        .style("stroke-width", 1 / transform.k);
-                    viewport.select(".county-outline")
-                        .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
-                    viewport.selectAll(".county")
-                        .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
+
+                    // TODO: Fix
+                    // viewport.selectAll("circle.school-point").attr("visibility", k > 5 ? "visible" : "hidden");
                 }
 
                 // Default update
