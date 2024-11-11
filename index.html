@@ -61,7 +61,7 @@
                     d3.csv('school_common_names.csv')
                 ]);
                 // 1996, 1988
-                
+
                 // Define slider info and exclude years without data
                 const sliderWidth = 300;
                 const sliderHeight = 10;
@@ -69,7 +69,7 @@
                 const maxYear = 2021;
                 const yearsWithoutData = [1988, 1996];
                 const validYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => i + minYear)
-                        .filter(year => !yearsWithoutData.includes(year));
+                    .filter(year => !yearsWithoutData.includes(year));
                 console.log(validYears);
                 const sliderContainer = d3.select('#chart1')
                     .append('div')
@@ -78,7 +78,6 @@
                     .style('height', `${sliderHeight * 3}px`);
 
                 // Add slider
-               
                 // Slider input element
                 const slider = sliderContainer
                     .append('input')
@@ -106,42 +105,39 @@
                         updateMapColors(selectedYear);
                     });
 
-                    sliderContainer.append('span')
-                        .style('position', 'absolute')
-                        .style('top', `${sliderHeight * 1.5}px`)
-                        .style('left', '-10px')
-                        .text(minYear);
+                sliderContainer.append('span')
+                    .style('position', 'absolute')
+                    .style('top', `${sliderHeight * 1.5}px`)
+                    .style('left', '-10px')
+                    .text(minYear);
 
-                        // Max label
-                    sliderContainer.append('span')
-                        .style('position', 'absolute')
-                        .style('top', `${sliderHeight * 1.5}px`)
-                        .style('right', '-15px')
-                        .text(maxYear);
-                    
+                // Max label
+                sliderContainer.append('span')
+                    .style('position', 'absolute')
+                    .style('top', `${sliderHeight * 1.5}px`)
+                    .style('right', '-15px')
+                    .text(maxYear);
+
                 for (let year = minYear; year <= maxYear; year++) {
                     if (!yearsWithoutData.includes(year)) {
-                    const position = ((year - minYear) / (maxYear - minYear)) * sliderWidth;
+                        const position = ((year - minYear) / (maxYear - minYear)) * sliderWidth;
 
-                    // Add tick line
-                    
-
-                    // Add tick label for every 5 years for readability
-                    if (year % 5 === 0 && year > 1970 && year < 2020 ) {
-                        sliderContainer.append('div')
-                            .style('position', 'absolute')
-                            .style('top', `${sliderHeight * 1.1}px`)
-                            .style('left', `${position}px`)
-                            .style('width', '1px')
-                            .style('height', '8px')
-                            .style('background', '#333');
-                        sliderContainer.append('span')
-                            .style('position', 'absolute')
-                            .style('top', `${sliderHeight * 2}px`)
-                            .style('left', `${position}px`)
-                            .style('transform', 'translateX(-50%)')
-                            .style('font-size', '10px')
-                            .text(year);
+                        // Add tick label for every 5 years for readability
+                        if (year % 5 === 0 && year > 1970 && year < 2020) {
+                            sliderContainer.append('div')
+                                .style('position', 'absolute')
+                                .style('top', `${sliderHeight * 1.1}px`)
+                                .style('left', `${position}px`)
+                                .style('width', '1px')
+                                .style('height', '8px')
+                                .style('background', '#333');
+                            sliderContainer.append('span')
+                                .style('position', 'absolute')
+                                .style('top', `${sliderHeight * 2}px`)
+                                .style('left', `${position}px`)
+                                .style('transform', 'translateX(-50%)')
+                                .style('font-size', '10px')
+                                .text(year);
                         }
                     }
                 }
@@ -277,28 +273,6 @@
                         .style("font-size", "12px")
                         .text("Number of NFL Draftees");
 
-                    // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
-                    var zoom = d3.zoom()
-                        .scaleExtent([1, 20])
-                        .translateExtent([[-50, -50], [mapWidth + 50, mapHeight + 50]])
-                        .on("zoom", mapZoomed);
-
-                    map.call(zoom);
-                    map.call(zoom.transform, d3.zoomIdentity);
-
-                    function mapZoomed({ transform }) {
-                        viewport.attr("transform", transform.toString());
-
-                        viewport.select(".state-outline")
-                            .style("stroke-width", 2 / transform.k);
-                        viewport.select(".county-outline")
-                            .style("stroke-width", 1 / transform.k);
-                        viewport.select(".county-outline")
-                            .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
-                        viewport.selectAll(".county")
-                            .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
-                    }
-
                     viewport.selectAll(".state").on("click", clicked);
                     viewport.selectAll(".county").on("click", clicked);
 
@@ -321,13 +295,36 @@
                     }
                 }
 
+                // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
+                var zoom = d3.zoom()
+                    .scaleExtent([1, 20])
+                    .translateExtent([[-50, -50], [mapWidth + 50, mapHeight + 50]])
+                    .on("zoom", mapZoomed);
+
+                map.call(zoom);
+                map.call(zoom.transform, d3.zoomIdentity);
+
+                function mapZoomed({ transform }) {
+                    transformFactor = transform
+                    viewport.attr("transform", transform.toString());
+
+                    viewport.select(".state-outline")
+                        .style("stroke-width", 2 / transform.k);
+                    viewport.select(".county-outline")
+                        .style("stroke-width", 1 / transform.k);
+                    viewport.select(".county-outline")
+                        .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
+                    viewport.selectAll(".county")
+                        .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
+                }
+
                 // Default update
                 updateMapColors(defaultYear)
             };
 
             requestData();
 
-            // TODO: Add interactive zoom s.t. users can manually zoom to trigger zoom in and out effect w.r.t. state (or by clicking the state)
+            // TODO: Show points of players when close enough + on hover, show metadata
         </script>
     </p>
 
