@@ -59,21 +59,34 @@
                     d3.json('us-smaller.json'),
                     d3.csv('state-id.csv'),
                     d3.csv('school_common_names.csv')
-                ])
-
-                // Add slider
-                // TODO (Bahaa): Add ticks + min, max + labels
-                // TODO (Bahaa): Disable years such as 1988 and 1996 that do not contain data
-                // TODO (Bahaa): Styling + make nicer
+                ]);
+                // 1996, 1988
+                
+                // Define slider info and exclude years without data
                 const sliderWidth = 300;
                 const sliderHeight = 10;
-                const slider = d3.select('#chart1')
+                const minYear = 1967;
+                const maxYear = 2021;
+                const yearsWithoutData = [1988, 1996];
+                const validYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => i + minYear)
+                        .filter(year => !yearsWithoutData.includes(year));
+                console.log(validYears);
+                const sliderContainer = d3.select('#chart1')
+                    .append('div')
+                    .style('position', 'relative')
+                    .style('width', `${sliderWidth}px`)
+                    .style('height', `${sliderHeight * 3}px`);
+
+                // Add slider
+               
+                // Slider input element
+                const slider = sliderContainer
                     .append('input')
                     .attr('type', 'range')
-                    .attr('min', 1967)
-                    .attr('max', 2021)
+                    .attr('min', 0)
+                    .attr('max', validYears.length - 1)
                     .attr('step', 1)
-                    .attr('value', defaultYear)
+                    .attr('value', validYears.length - 1)
                     .style('width', `${sliderWidth}px`)
                     .style('height', `${sliderHeight}px`)
                     .style('cursor', 'pointer')
@@ -81,15 +94,57 @@
                     .style('outline', 'none')
                     .style('border-radius', '5px')
                     .on('input', function () {
-                        const selectedYear = this.value;
+                        const selectedYearIndex = this.value;
+                        const selectedYear = validYears[selectedYearIndex];
                         chartTitle.text(`${selectedYear} NFL Drafts`);
                     })
                     .on('pointerup', function () {
-                        const selectedYear = this.value;
+                        const selectedYearIndex = this.value;
+                        const selectedYear = validYears[selectedYearIndex];
 
-                        // Update only on off to improve performance
+                        // Update only on release to improve performance
                         updateMapColors(selectedYear);
                     });
+
+                    sliderContainer.append('span')
+                        .style('position', 'absolute')
+                        .style('top', `${sliderHeight * 1.5}px`)
+                        .style('left', '-10px')
+                        .text(minYear);
+
+                        // Max label
+                    sliderContainer.append('span')
+                        .style('position', 'absolute')
+                        .style('top', `${sliderHeight * 1.5}px`)
+                        .style('right', '-15px')
+                        .text(maxYear);
+                    
+                for (let year = minYear; year <= maxYear; year++) {
+                    if (!yearsWithoutData.includes(year)) {
+                    const position = ((year - minYear) / (maxYear - minYear)) * sliderWidth;
+
+                    // Add tick line
+                    
+
+                    // Add tick label for every 5 years for readability
+                    if (year % 5 === 0 && year > 1970 && year < 2020 ) {
+                        sliderContainer.append('div')
+                            .style('position', 'absolute')
+                            .style('top', `${sliderHeight * 1.1}px`)
+                            .style('left', `${position}px`)
+                            .style('width', '1px')
+                            .style('height', '8px')
+                            .style('background', '#333');
+                        sliderContainer.append('span')
+                            .style('position', 'absolute')
+                            .style('top', `${sliderHeight * 2}px`)
+                            .style('left', `${position}px`)
+                            .style('transform', 'translateX(-50%)')
+                            .style('font-size', '10px')
+                            .text(year);
+                        }
+                    }
+                }
 
                 const states = topojson.feature(usData, usData.objects.states);
                 const projection = d3.geoAlbersUsa().fitSize([mapWidth, mapHeight], states);
