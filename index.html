@@ -304,9 +304,14 @@
                 map.call(zoom.transform, d3.zoomIdentity);
 
                 function mapZoomed({ transform }) {
+                    if (transform.k > 1) {
+                        svg.select('.legend').style('opacity', 0); // Hide legend when zoomed in
+                    } else {
+                        svg.select('.legend').style('opacity', 1); // Show legend when zoomed out
+                    }
+                    
                     transformFactor = transform
                     viewport.attr("transform", transform.toString());
-
                     viewport.select(".state-outline")
                         .style("stroke-width", 2 / transform.k);
                     viewport.select(".county-outline")
