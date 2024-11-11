@@ -31,6 +31,7 @@
         <script>
             const svgWidth = 1200;
             const svgHeight = 650;
+            var k = 1;
             const svg = d3.select('#chart1')
                 .append('svg')
                 .attr('width', svgWidth)
@@ -226,7 +227,8 @@
                     const g = svg
                         .append('g')
                         .attr('class', 'legend')
-                        .attr('transform', `translate(${mapWidth + 30}, 100)`);
+                        .attr('transform', `translate(${mapWidth + 30}, 100)`)
+                        .attr('opacity', k > 1 ? 0 : 1);
 
                     const defs = svg.append("defs");
                     const gradient = defs.append("linearGradient")
@@ -291,6 +293,7 @@
                             .translate(translate[0], translate[1])
                             .scale(scale);
                         map.transition().duration(1000).call(zoom.transform, newTransform);
+
                     }
                 }
 
@@ -309,6 +312,7 @@
                     } else {
                         svg.select('.legend').style('opacity', 1); // Show legend when zoomed out
                     }
+                    k = transform.k;
                     
                     transformFactor = transform
                     viewport.attr("transform", transform.toString());
