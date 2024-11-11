@@ -49,8 +49,8 @@
             const margin = { top: 20, right: 100, bottom: 20, left: 20 };
             const mapWidth = svgWidth - margin.left - margin.right;
             const mapHeight = svgHeight - margin.top - margin.bottom;
-            const map = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-            const viewport = map.append("g");
+            const map = svg.append("g")
+            const viewport = map.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");;
 
             const requestData = async function () {
                 const [nflData, schoolsData, usData, stateIdData, schoolCommonData] = await Promise.all([
@@ -325,6 +325,7 @@
             requestData();
 
             // TODO: Show points of players when close enough + on hover, show metadata
+            // TODO (Bahaa): Option 1: Zoom-in hides legend, Option 2: Zoom-in minimizes (dynamically) the legend
         </script>
     </p>
 
