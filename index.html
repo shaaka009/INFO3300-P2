@@ -8,7 +8,7 @@
 
     <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Raleway:400,700" rel="stylesheet">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/default.min.css">
- 
+
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v2.min.js"></script>
@@ -49,8 +49,8 @@
             const margin = { top: 20, right: 100, bottom: 20, left: 20 };
             const mapWidth = svgWidth - margin.left - margin.right;
             const mapHeight = svgHeight - margin.top - margin.bottom;
-            const map = svg.append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            const map = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            const viewport = map.append("g");
 
             const requestData = async function () {
                 const [nflData, schoolsData, usData, stateIdData, schoolCommonData] = await Promise.all([
@@ -150,7 +150,7 @@
                         .domain([0, d3.max(Object.values(stateCounts)) || 1]);
 
                     // Draw and color states
-                    const statePaths = map.selectAll("path.state").data(states.features)
+                    const statePaths = viewport.selectAll("path.state").data(states.features)
                         .join("path")
                         .attr("class", "state")
                         .attr("note", d => d.id)
@@ -221,6 +221,49 @@
                         .attr("text-anchor", "middle")
                         .style("font-size", "12px")
                         .text("Number of NFL Draftees");
+
+                    // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
+                    var zoom = d3.zoom()
+                        .scaleExtent([1, 20])
+                        .translateExtent([[-50, -50], [mapWidth + 50, mapHeight + 50]])
+                        .on("zoom", mapZoomed);
+
+                    map.call(zoom);
+                    map.call(zoom.transform, d3.zoomIdentity);
+
+                    function mapZoomed({ transform }) {
+                        viewport.attr("transform", transform.toString());
+
+                        viewport.select(".state-outline")
+                            .style("stroke-width", 2 / transform.k);
+                        viewport.select(".county-outline")
+                            .style("stroke-width", 1 / transform.k);
+                        viewport.select(".county-outline")
+                            .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
+                        viewport.selectAll(".county")
+                            .attr("visibility", (transform.k > 3) ? "visible" : "hidden");
+                    }
+
+                    viewport.selectAll(".state").on("click", clicked);
+                    viewport.selectAll(".county").on("click", clicked);
+
+                    function clicked(event, d) {
+                        let bounds = path.bounds(d.geometry);
+                        let dx = bounds[1][0] - bounds[0][0];
+                        let dy = bounds[1][1] - bounds[0][1];
+                        let x = (bounds[0][0] + bounds[1][0]) / 2;
+                        let y = (bounds[0][1] + bounds[1][1]) / 2;
+
+                        let scale = Math.max(1, Math.min(10, 0.9 / Math.max(dx / mapWidth,
+                            dy / mapHeight)));
+
+                        let translate = [mapWidth / 2 - x * scale, mapHeight / 2 - y * scale];
+
+                        let newTransform = d3.zoomIdentity
+                            .translate(translate[0], translate[1])
+                            .scale(scale);
+                        map.transition().duration(1000).call(zoom.transform, newTransform);
+                    }
                 }
 
                 // Default update
