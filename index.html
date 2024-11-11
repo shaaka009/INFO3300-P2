@@ -142,7 +142,7 @@
 
                     // Update the color scale based on the counts for the selected year
                     const colorScale = d3.
-                        scaleSequential(d3.interpolateViridis)
+                        scaleSequential(d3.interpolateBlues)
                         .domain([0, d3.max(Object.values(stateCounts)) || 1]);
 
                     // Draw and color states
