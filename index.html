@@ -368,8 +368,328 @@
     <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
         Chart 2: TODO</h2>
     <p id="chart2">
-        <svg id="chart2" width="1000" height="800"></svg>
         <script>
+
+            let destMap = [["ALABAMA", 0],
+            ["ALASKA", 0],
+            ["ARIZONA", 0],
+            ["ARKANSAS", 0],
+            ["CALIFORNIA", 0],
+            ["COLORADO", 0],
+            ["CONNECTICUT", 0],
+            ["DELAWARE", 0],
+            ["FLORIDA", 0],
+            ["GEORGIA", 0],
+            ["HAWAII", 0],
+            ["IDAHO", 0],
+            ["ILLINOIS", 0],
+            ["INDIANA", 0],
+            ["IOWA", 0],
+            ["KANSAS", 0],
+            ["KENTUCKY", 0],
+            ["LOUISIANA", 0],
+            ["MAINE", 0],
+            ["MARYLAND", 0],
+            ["MASSACHUSETTS", 0],
+            ["MICHIGAN", 0],
+            ["MINNESOTA", 0],
+            ["MISSISSIPPI", 0],
+            ["MISSOURI", 0],
+            ["MONTANA", 0],
+            ["NEBRASKA", 0],
+            ["NEVADA", 0],
+            ["NEW HAMPSHIRE", 0],
+            ["NEW JERSEY", 0],
+            ["NEW MEXICO", 0],
+            ["NEW YORK", 0],
+            ["NORTH CAROLINA", 0],
+            ["NORTH DAKOTA", 0],
+            ["OHIO", 0],
+            ["OKLAHOMA", 0],
+            ["OREGON", 0],
+            ["PENNSYLVANIA", 0],
+            ["RHODE ISLAND", 0],
+            ["SOUTH CAROLINA", 0],
+            ["SOUTH DAKOTA", 0],
+            ["TENNESSEE", 0],
+            ["TEXAS", 0],
+            ["UTAH", 0],
+            ["VERMONT", 0],
+            ["VIRGINIA", 0],
+            ["WASHINGTON", 0],
+            ["WEST VIRGINIA", 0],
+            ["WISCONSIN", 0],
+            ["WYOMING", 0]
+            ];
+
+
+
+            function getStateFromTeam(team_name) {
+
+                switch (team_name.toLowerCase()) { // Convert to lowercase for case-insensitive matching
+                    // AFC East
+                    case 'buffalo bills': return 'New York';
+                    case 'miami dolphins': return 'Florida';
+                    case 'new england patriots': return 'Massachusetts';
+                    case 'new york jets': return 'New Jersey';
+
+                    // AFC North
+                    case 'baltimore ravens': return 'Maryland';
+                    case 'cincinnati bengals': return 'Ohio';
+                    case 'cleveland browns': return 'Ohio';
+                    case 'pittsburgh steelers': return 'Pennsylvania';
+
+                    // AFC South
+                    case 'houston texans': return 'Texas';
+                    case 'indianapolis colts': return 'Indiana';
+                    case 'jacksonville jaguars': return 'Florida';
+                    case 'tennessee titans': return 'Tennessee';
+
+                    // AFC West
+                    case 'denver broncos': return 'Colorado';
+                    case 'kansas city chiefs': return 'Missouri';
+                    case 'las vegas raiders': return 'Nevada';
+                    case 'los angeles chargers': return 'California';
+
+                    // NFC East
+                    case 'dallas cowboys': return 'Texas';
+                    case 'new york giants': return 'New Jersey';
+                    case 'philadelphia eagles': return 'Pennsylvania';
+                    case 'washington commanders': return 'Maryland';
+
+                    // NFC North
+                    case 'chicago bears': return 'Illinois';
+                    case 'detroit lions': return 'Michigan';
+                    case 'green bay packers': return 'Wisconsin';
+                    case 'minnesota vikings': return 'Minnesota';
+
+                    // NFC South
+                    case 'atlanta falcons': return 'Georgia';
+                    case 'carolina panthers': return 'North Carolina';
+                    case 'new orleans saints': return 'Louisiana';
+                    case 'tampa bay buccaneers': return 'Florida';
+
+                    // NFC West
+                    case 'arizona cardinals': return 'Arizona';
+                    case 'los angeles rams': return 'California';
+                    case 'san francisco 49ers': return 'California';
+                    case 'seattle seahawks': return 'Washington';
+
+                    // Old teams
+                    case 'baltimore colts': return 'Maryland';
+                    case 'houston oilers': return 'Texas';
+                    case 'washington redskins': return 'Washington';
+                    case 'san diego chargers': return 'California';
+                    case 'st. louis cardinals': return 'Missouri';
+                    case 'oakland raiders': return 'California';
+                    case 'st. louis rams': return 'Missouri';
+                    case 'phoenix cardinals': return 'Arizona';
+                    case 'washington': return 'Washington';
+                    case 'tennessee oilers': return 'Tennessee';
+                    case 'boston patriots': return 'Massachusetts';
+                    case 'los angeles raiders': return 'California';
+
+
+                    // Default case if the team name is not found
+                    default: return 'Unknown team or incorrect name';
+
+                }
+
+            }
+
+
+            // Chart Setup
+            const C2width = 960;
+            const C2height = 620;
+
+            const svg2 = d3.select('#chart2')
+                .append('svg')
+                .attr('width', C2width)
+                .attr('height', C2height);
+
+            const usProj = d3
+                .geoAlbersUsa()
+                .scale(1280)
+                .translate([C2width / 2, C2height / 2]);
+
+            const map2 = svg2.append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            const path = d3.geoPath().projection(usProj);;
+
+            // Access Data 
+            Promise.all([
+                d3.csv('schools_data.csv'),
+                d3.csv('nfl_draft_prospects.csv'),
+                d3.json('us-smaller.json'),
+                d3.csv('school_common_names.csv'),
+                d3.csv('state-id.csv')
+            ]).then(([schoolData, draftData, us, schoolCommonData, stateId]) => {
+
+                // Common name to full university name mapping
+                const stateCommonName = new Map();
+                schoolCommonData.forEach(school => {
+                    stateCommonName.set(school['Common Name'], school['Full University Name']);
+                    if (school['Common Name 2']) {
+                        stateCommonName.set(school['Common Name 2'], school['Full University Name']);
+                    }
+                });
+
+                // Mapping of TOPOJson IDs to state name
+                const IDMap = new Map();
+
+                stateId.forEach(state => {
+
+                    IDMap.set(+state.state_code, state.state_name);
+
+                });
+
+                // For each draftee collect info on what state they played college level
+                // in, and what state they went to (first) for professional level
+
+                stateToStateMap = new Map();
+
+                draftData.forEach(draftee => {
+
+                    const findSchool = (school) => {
+                        const schoolName = school['Name']
+                        if (schoolName.includes(draftee.school)) return true
+                        return stateCommonName.has(draftee.school);
+                    }
+
+                    const playerSchool = schoolData.find(findSchool);
+                    let state = playerSchool ? playerSchool['State abbreviation'].toUpperCase() : null;
+
+                    if (state) {
+
+                        state = state.toUpperCase();
+                        dest = getStateFromTeam(draftee['team']).toUpperCase();
+
+                        if (stateToStateMap.has(state)) {
+                            let temp = stateToStateMap.get(state);
+                            temp.set(dest, temp.get(dest) + 1);
+                            stateToStateMap.set(state, temp);
+                        } else {
+                            stateToStateMap.set(state, new Map(destMap));
+                            let temp = stateToStateMap.get(state);
+                            temp.set(dest, temp.get(dest) + 1);
+                            stateToStateMap.set(state, temp);
+
+                        }
+                    }
+
+                });
+
+                let selectedState = null;
+
+                // Draw States
+                svg2.append("g")
+                    .attr("class", "states")
+                    .selectAll("path")
+                    .data(topojson.feature(us, us.objects.states).features)
+                    .enter().append("path")
+                    .attr("fill", "brown")
+                    .attr("stroke", "lightgray")
+                    .attr("d", path)
+                    .on("click", function (event, d) {
+
+                        const clickedState = d3.select(this);
+
+                        if (selectedState && selectedState.node() === clickedState.node()) {
+                            clickedState.transition()
+                                .duration(200)
+                                .attr("fill", "brown")
+                                .attr("stroke-width", 0.5)
+                                .attr("transform", "scale(1)");
+                            selectedState = null;
+                            return;
+                        }
+
+                        const bounds = path.bounds(d); // Get the bounding box of the state
+                        const midX = (bounds[1][0] + bounds[0][0]) / 2; // Center x
+                        const midY = (bounds[1][1] + bounds[0][1]) / 2; // Center y
+
+
+                        if (selectedState) {
+                            selectedState.transition()
+                                .duration(200)
+                                .attr("fill", "brown")
+                                .attr("stroke-width", 0.5)
+                                .attr("transform", "scale(1)"); // Reset scale
+                            svg2.selectAll("#arrows").remove();
+                        }
+
+                        clickedState.raise();
+
+                        clickedState.transition()
+                            .duration(200)
+                            .attr("fill", "orange")
+                            .attr("stroke-width", 2)
+                            .attr("transform", `translate(${midX}, ${midY}) scale(1.2) translate(${-midX}, ${-midY})`);
+
+                        let outgoing = stateToStateMap.get(IDMap.get(d.id).toUpperCase());
+
+                        // Arrow drawing function
+                        function drawArrow(init, term, total) {
+
+                            let initx = init[0];
+                            let inity = init[1];
+
+                            let termx = term[0];
+                            let termy = term[1];
+
+                            svg2.append("line")
+                                .attr("id", "arrows")
+                                .attr("x1", initx)  // Starting x-coordinate
+                                .attr("y1", inity)  // Starting y-coordinate
+                                .attr("x2", termx) // Ending x-coordinate
+                                .attr("y2", termy) // Ending y-coordinate
+                                .attr("stroke", "black") // Line color
+                                .attr("stroke-width", 3); // Line thickness
+                        }
+
+                        let sum = 0;
+
+                        // Calculate total drafts out of state
+                        outgoing.forEach(out => {
+
+                            if (!isNaN(out)) sum += out;
+
+                        });
+
+                        // Draw each outgoing arrow
+                        outgoing.forEach((drafts, state) => {
+
+                            if (drafts == 0) return;
+
+                            let dest = stateId.find((stateID) =>
+                                (stateID.state_name.toUpperCase() === state)
+                            );
+
+                            if (dest) {
+
+                                let destBox = topojson.feature(us, us.objects.states).features.find((state_data) => (state_data.id == dest.state_code));
+
+                                const destBounds = path.bounds(destBox); // Get the bounding box of the state
+                                const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2; // Center x
+                                const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2; // Center y
+
+                                drawArrow([midX, midY], [destMidX, destMidY], sum);
+
+                            }
+
+
+                            //drawArrow([midX, midY], )
+
+                        });
+
+                        selectedState = clickedState;
+                    });
+
+
+
+            });
+
         </script>
     </p>
 
