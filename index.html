@@ -297,8 +297,8 @@
                         .join(
                             enter => enter.append("circle")
                                 .attr("class", "school-point")
-                                .attr("r", 2)
-                                .style("fill", "red")
+                                .attr("r", 3)
+                                .style("fill", "red") // TODO: Change fill?
                                 .style("opacity", 0.6)
                                 .transition()
                                 .duration(500)
@@ -306,6 +306,42 @@
                                 .attr("cx", d => d.cx)
                                 .attr("cy", d => d.cy)
                         );
+
+                    // Add interactivity
+                    circles.on("pointerover", function (event, d) {
+                        circles.transition().style("opacity", 0.2);
+
+                        d3.select(this)
+                            .transition()
+                            .attr("r", 6)
+                            .style("opacity", 1);
+
+                        // Tooltip display
+                        const tooltip = d3.select("body").append("div")
+                            .attr("class", "tooltip")
+                            .style("position", "absolute")
+                            .style("background", "#f9f9f9")
+                            .style("border", "1px solid #ccc")
+                            .style("padding", "5px")
+                            .style("opacity", 1)
+                            .html(`
+                                    <strong>School:</strong> ${d.schoolName}<br>
+                                    <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
+                                `);
+
+                        tooltip.style("left", `${event.pageX + 5}px`)
+                            .style("top", `${event.pageY - 30}px`);
+                    })
+                        .on("pointerout", function () {
+                            circles.transition().style("opacity", 0.6);
+
+                            d3.select(this)
+                                .transition()
+                                .attr("r", 3)
+                                .style("opacity", 0.6);
+
+                            d3.select(".tooltip").remove();
+                        })
 
                     // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
                     viewport.selectAll(".state").on("click", clicked);
@@ -341,16 +377,9 @@
 
                 function mapZoomed({ transform }) {
                     k = transform.k;
-                    if (k > 1) {
-                        svg.select('.legend').style('opacity', 0);
-                    } else {
-                        svg.select('.legend').style('opacity', 1);
-                    }
+                    svg.select('.legend').style('opacity', k > 1 ? 0 : 1);
 
                     viewport.attr("transform", transform.toString());
-
-                    // TODO: Fix
-                    // viewport.selectAll("circle.school-point").attr("visibility", k > 5 ? "visible" : "hidden");
                 }
 
                 // Default update
@@ -359,7 +388,6 @@
 
             requestData();
 
-            // TODO: Show points of players when close enough + on hover, show metadata
             // TODO (Bahaa): Option 1: Zoom-in hides legend, Option 2: Zoom-in minimizes (dynamically) the legend
             // Went with Option 1 for now, mention in document and change if decide a different one
         </script>
