@@ -17,6 +17,13 @@
         p {
             margin: 50px;
         }
+
+        #arrow {
+            stroke: #000;
+            stroke-width: 2px;
+            fill: none;
+            /*marker-end: url(#arrowhead);*/
+        }
     </style>
 </head>
 
@@ -578,7 +585,6 @@
                 // in, and what state they went to (first) for professional level
                 stateToStateMap = new Map();
 
-                // Keep track of largest value for scale
                 let max = 0;
 
                 draftData.forEach(draftee => {
@@ -603,20 +609,22 @@
                         if (stateToStateMap.has(state)) {
                             let temp = stateToStateMap.get(state);
                             temp.set(dest, temp.get(dest) + 1);
+                            max = temp.get(dest) > max ? temp.get(dest) : max;
                             stateToStateMap.set(state, temp);
                         } else {
                             stateToStateMap.set(state, new Map(destMap));
                             let temp = stateToStateMap.get(state);
                             temp.set(dest, temp.get(dest) + 1);
-                            if (temp.get(dest) > max) {
-                                max = temp.get(dest);
-                            }
                             stateToStateMap.set(state, temp);
 
                         }
                     }
 
                 });
+
+                // Domain will be a percent of the whole, range will be from 0 width to 40 width arrows
+                const widthScale = d3.scaleLinear().domain([0, max])
+                    .range([3, 30]);
 
                 let selectedState = null;
 
@@ -642,6 +650,7 @@
                                 .attr("stroke-width", 0.5)
                                 .attr("transform", "scale(1)");
                             selectedState = null;
+                            svg2.selectAll("#arrows").remove();
                             return;
                         }
 
@@ -686,12 +695,20 @@
 
                             let sweepFlag = initx < termx ? 1 : 0;
 
-                            svg2.append("path")
+                            let arrow = svg2.append("path")
                                 .attr("id", "arrows")
                                 .attr("d", `M ${initx} ${inity} A ${distance} ${distance} 0 0 ${sweepFlag} ${termx} ${termy}`)
                                 .attr("stroke", "#fa3838")
-                                .attr("stroke-width", "2")
+                                .attr("stroke-width", widthScale(partial))
                                 .attr("fill", "none");
+
+                            const totalLength = arrow.node().getTotalLength();
+
+                            arrow.attr("stroke-dasharray", totalLength + " " + totalLength)
+                                .attr("stroke-dashoffset", totalLength)
+                                .transition()
+                                .duration(1000)
+                                .attr("stroke-dashoffset", 0);
 
                         }
 
@@ -709,6 +726,7 @@
 
                             if (drafts == 0) return;
 
+                            // Get ID for outgoing arrow
                             let dest = stateId.find((stateID) =>
                                 (stateID.state_name.toUpperCase() === state)
                             );
@@ -724,10 +742,6 @@
                                 drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
 
                             }
-
-
-                            //drawArrow([midX, midY], )
-
                         });
 
                         selectedState = clickedState;
