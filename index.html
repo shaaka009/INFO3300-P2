@@ -395,9 +395,12 @@
 
     <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
         Chart 2: TODO</h2>
-    <p id="chart2">
+    <p id="chart2"
+        style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+
         <script>
 
+            // Iterable used for statetostate data structure
             let destMap = [["ALABAMA", 0],
             ["ALASKA", 0],
             ["ARIZONA", 0],
@@ -450,8 +453,7 @@
             ["WYOMING", 0]
             ];
 
-
-
+            // Get state from team name
             function getStateFromTeam(team_name) {
 
                 switch (team_name.toLowerCase()) { // Convert to lowercase for case-insensitive matching
@@ -574,20 +576,25 @@
 
                 // For each draftee collect info on what state they played college level
                 // in, and what state they went to (first) for professional level
-
                 stateToStateMap = new Map();
+
+                // Keep track of largest value for scale
+                let max = 0;
 
                 draftData.forEach(draftee => {
 
+                    // Function to find school of draftee
                     const findSchool = (school) => {
                         const schoolName = school['Name']
                         if (schoolName.includes(draftee.school)) return true
                         return stateCommonName.has(draftee.school);
                     }
 
+                    // Find school of draftee, and get state
                     const playerSchool = schoolData.find(findSchool);
                     let state = playerSchool ? playerSchool['State abbreviation'].toUpperCase() : null;
 
+                    // Find draftee destination and insert into mapping
                     if (state) {
 
                         state = state.toUpperCase();
@@ -601,6 +608,9 @@
                             stateToStateMap.set(state, new Map(destMap));
                             let temp = stateToStateMap.get(state);
                             temp.set(dest, temp.get(dest) + 1);
+                            if (temp.get(dest) > max) {
+                                max = temp.get(dest);
+                            }
                             stateToStateMap.set(state, temp);
 
                         }
@@ -619,10 +629,12 @@
                     .attr("fill", "brown")
                     .attr("stroke", "lightgray")
                     .attr("d", path)
+                    // On click 
                     .on("click", function (event, d) {
 
                         const clickedState = d3.select(this);
 
+                        // If double click on state
                         if (selectedState && selectedState.node() === clickedState.node()) {
                             clickedState.transition()
                                 .duration(200)
@@ -633,11 +645,12 @@
                             return;
                         }
 
+                        // Bounds of initial state
                         const bounds = path.bounds(d); // Get the bounding box of the state
                         const midX = (bounds[1][0] + bounds[0][0]) / 2; // Center x
                         const midY = (bounds[1][1] + bounds[0][1]) / 2; // Center y
 
-
+                        // Unselected state animation
                         if (selectedState) {
                             selectedState.transition()
                                 .duration(200)
@@ -647,18 +660,21 @@
                             svg2.selectAll("#arrows").remove();
                         }
 
+                        // Bring selected to forefront
                         clickedState.raise();
 
+                        // Clicked state transition
                         clickedState.transition()
                             .duration(200)
                             .attr("fill", "orange")
                             .attr("stroke-width", 2)
                             .attr("transform", `translate(${midX}, ${midY}) scale(1.2) translate(${-midX}, ${-midY})`);
 
+                        // Find map of outgoing values
                         let outgoing = stateToStateMap.get(IDMap.get(d.id).toUpperCase());
 
                         // Arrow drawing function
-                        function drawArrow(init, term, total) {
+                        function drawArrow(init, term, total, partial) {
 
                             let initx = init[0];
                             let inity = init[1];
@@ -666,14 +682,17 @@
                             let termx = term[0];
                             let termy = term[1];
 
-                            svg2.append("line")
+                            let distance = Math.pow(Math.pow((initx - termx), 2) + Math.pow((inity - termy), 2), 0.5);
+
+                            let sweepFlag = initx < termx ? 1 : 0;
+
+                            svg2.append("path")
                                 .attr("id", "arrows")
-                                .attr("x1", initx)  // Starting x-coordinate
-                                .attr("y1", inity)  // Starting y-coordinate
-                                .attr("x2", termx) // Ending x-coordinate
-                                .attr("y2", termy) // Ending y-coordinate
-                                .attr("stroke", "black") // Line color
-                                .attr("stroke-width", 3); // Line thickness
+                                .attr("d", `M ${initx} ${inity} A ${distance} ${distance} 0 0 ${sweepFlag} ${termx} ${termy}`)
+                                .attr("stroke", "#fa3838")
+                                .attr("stroke-width", "2")
+                                .attr("fill", "none");
+
                         }
 
                         let sum = 0;
@@ -702,7 +721,7 @@
                                 const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2; // Center x
                                 const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2; // Center y
 
-                                drawArrow([midX, midY], [destMidX, destMidY], sum);
+                                drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
 
                             }
 
