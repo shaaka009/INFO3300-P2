@@ -18,11 +18,8 @@
             margin: 50px;
         }
 
-        #arrow {
-            stroke: #000;
-            stroke-width: 2px;
-            fill: none;
-            /*marker-end: url(#arrowhead);*/
+        #arrows {
+            marker-end: url(#arrowhead);
         }
     </style>
 </head>
@@ -537,7 +534,6 @@
 
             }
 
-
             // Chart Setup
             const C2width = 960;
             const C2height = 620;
@@ -546,6 +542,9 @@
                 .append('svg')
                 .attr('width', C2width)
                 .attr('height', C2height);
+
+            // Append marker def
+
 
             const usProj = d3
                 .geoAlbersUsa()
@@ -588,6 +587,7 @@
                 // in, and what state they went to (first) for professional level
                 stateToStateMap = new Map();
 
+                // Keep track of largest value for scale
                 let max = 0;
 
                 draftData.forEach(draftee => {
@@ -627,7 +627,7 @@
 
                 // Domain will be a percent of the whole, range will be from 0 width to 40 width arrows
                 const widthScale = d3.scaleLinear().domain([0, max])
-                    .range([3, 30]);
+                    .range([2, 15]);
 
                 let selectedState = null;
 
@@ -637,8 +637,8 @@
                     .selectAll("path")
                     .data(topojson.feature(us, us.objects.states).features)
                     .enter().append("path")
-                    .attr("fill", "brown")
-                    .attr("stroke", "lightgray")
+                    .attr("fill", "#f4f1de")
+                    .attr("stroke", "black")
                     .attr("d", path)
                     // On click 
                     .on("click", function (event, d) {
@@ -649,28 +649,35 @@
                         if (selectedState && selectedState.node() === clickedState.node()) {
                             clickedState.transition()
                                 .duration(200)
-                                .attr("fill", "brown")
-                                .attr("stroke-width", 0.5)
+                                .attr("fill", "#f4f1de")
+                                .attr("stroke-width", 1)
                                 .attr("transform", "scale(1)");
                             selectedState = null;
                             svg2.selectAll("#arrows").remove();
+                            svg2.selectAll("defs").remove();
+
                             return;
                         }
 
-                        // Bounds of initial state
-                        const bounds = path.bounds(d); // Get the bounding box of the state
-                        const midX = (bounds[1][0] + bounds[0][0]) / 2; // Center x
-                        const midY = (bounds[1][1] + bounds[0][1]) / 2; // Center y
-
-                        // Unselected state animation
+                        // Untransition last state
                         if (selectedState) {
                             selectedState.transition()
                                 .duration(200)
-                                .attr("fill", "brown")
-                                .attr("stroke-width", 0.5)
-                                .attr("transform", "scale(1)"); // Reset scale
+                                .attr("fill", "#f4f1de")
+                                .attr("stroke-width", 1)
+                                .attr("transform", "scale(1)");
                             svg2.selectAll("#arrows").remove();
+                            svg2.selectAll("defs").remove();
+
                         }
+
+                        // Bounds of initial state
+                        const bounds = path.bounds(d);
+                        const midX = (bounds[1][0] + bounds[0][0]) / 2;
+                        const midY = (bounds[1][1] + bounds[0][1]) / 2;
+
+                        // Unselected state animation
+
 
                         // Bring selected to forefront
                         clickedState.raise();
@@ -694,58 +701,89 @@
                             let termx = term[0];
                             let termy = term[1];
 
-                            let distance = Math.pow(Math.pow((initx - termx), 2) + Math.pow((inity - termy), 2), 0.5);
+                            // In the case we are drawing an arrow from a state to itself
+                            if (initx == termx && inity == termy) {
 
-                            let sweepFlag = initx < termx ? 1 : 0;
 
-                            let arrow = svg2.append("path")
-                                .attr("id", "arrows")
-                                .attr("d", `M ${initx} ${inity} A ${distance} ${distance} 0 0 ${sweepFlag} ${termx} ${termy}`)
-                                .attr("stroke", "#fa3838")
-                                .attr("stroke-width", widthScale(partial))
-                                .attr("fill", "none");
 
-                            const totalLength = arrow.node().getTotalLength();
+                            } else {
 
-                            arrow.attr("stroke-dasharray", totalLength + " " + totalLength)
-                                .attr("stroke-dashoffset", totalLength)
-                                .transition()
-                                .duration(1000)
-                                .attr("stroke-dashoffset", 0);
+                                let distance = Math.pow(Math.pow((initx - termx), 2) + Math.pow((inity - termy), 2), 0.5);
 
+                                let sweepFlag = initx < termx ? 1 : 0;
+
+                                // Draw inner part of arc
+                                let arrow = svg2.append("path")
+                                    .attr("id", "arrows")
+                                    .attr("d", `M ${initx} ${inity} A ${2 * distance} ${2 * distance} 0 0 ${sweepFlag} ${termx} ${termy}`)
+                                    .attr("stroke", "#e07a5f")
+                                    .attr("stroke-width", widthScale(partial))
+                                    .attr("opacity", 0.5)
+                                    .attr("fill", "none");
+
+                                // Animation for arrows
+                                const totalLength = arrow.node().getTotalLength();
+
+                                arrow.attr("stroke-dasharray", totalLength + " " + totalLength)
+                                    .attr("stroke-dashoffset", totalLength)
+                                    .transition()
+                                    .duration(1000)
+                                    .attr("stroke-dashoffset", 0);
+
+                                svg2.append("defs").append("marker")
+                                    .attr("id", "arrowhead")
+                                    .attr("viewBox", "0 -5 10 15")
+                                    .attr("refX", 10)
+                                    .attr("refY", 0)
+                                    .attr("markerWidth", 6)
+                                    .attr("markerHeight", 6)
+                                    .attr("orient", "auto")
+                                    .append("path")
+                                    .attr("d", "M0,-5L13,0L0,5")
+                                    .attr("fill", "#e07a5f")
+                                    .attr("transform", "scale(0)")
+                                    .transition()
+                                    .duration(1000)
+                                    .attr("transform", "scale(1)");
+                            }
                         }
 
                         let sum = 0;
 
                         // Calculate total drafts out of state
-                        outgoing.forEach(out => {
+                        try {
+                            outgoing.forEach(out => {
 
-                            if (!isNaN(out)) sum += out;
+                                if (!isNaN(out)) sum += out;
 
-                        });
+                            });
 
-                        // Draw each outgoing arrow
-                        outgoing.forEach((drafts, state) => {
+                            // Draw each outgoing arrow
+                            outgoing.forEach((drafts, state) => {
 
-                            if (drafts == 0) return;
+                                if (drafts == 0) return;
 
-                            // Get ID for outgoing arrow
-                            let dest = stateId.find((stateID) =>
-                                (stateID.state_name.toUpperCase() === state)
-                            );
+                                // Get ID for outgoing arrow
+                                let dest = stateId.find((stateID) =>
+                                    (stateID.state_name.toUpperCase() === state)
+                                );
 
-                            if (dest) {
+                                if (dest) {
 
-                                let destBox = topojson.feature(us, us.objects.states).features.find((state_data) => (state_data.id == dest.state_code));
+                                    let destBox = topojson.feature(us, us.objects.states).features.find((state_data) => (state_data.id == dest.state_code));
 
-                                const destBounds = path.bounds(destBox); // Get the bounding box of the state
-                                const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2; // Center x
-                                const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2; // Center y
+                                    const destBounds = path.bounds(destBox);
+                                    const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2;
+                                    const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2;
 
-                                drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
+                                    drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
 
-                            }
-                        });
+                                }
+                            });
+                        } catch {
+                            // We come here if the associated map was never instantiated
+                            // only a problem for Vermont
+                        }
 
                         selectedState = clickedState;
                     });
