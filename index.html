@@ -16,6 +16,10 @@
         p {
             margin: 50px;
         }
+
+        #arrows {
+            marker-end: url(#arrowhead);
+        }
     </style>
 </head>
 
@@ -26,17 +30,20 @@
         NFL Draft Information</h1>
     <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
         Chart 1: NFL Drafts vs Location</h2>
+        <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
+           We wanted to examine the different schools and see if there were a lot of players that came from specific schools over the years for the NFL Draft. This diagram shows you more information as you zoom in about specific schools and the players! You can also use the slider to check out different years! The different color hues represent the density of players from that state. Explore different years and see the trends of certain states! </p>
     <p id="chart1"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <script>
             const svgWidth = 1200;
             const svgHeight = 650;
+            // global zoom factor to keep track how much we've zoomed in so far
             var k = 1;
             const svg = d3.select('#chart1')
                 .append('svg')
                 .attr('width', svgWidth)
                 .attr('height', svgHeight)
-
+            // default for slider and display
             const defaultYear = 2021;
             const chartTitle = svg
                 .append("text")
@@ -59,6 +66,7 @@
             const minYear = 1967;
             const maxYear = 2021;
             const yearsWithoutData = [1988, 1996];
+            // Create an array with all the years that have data, manual inspection yields that 1988 and 1996 don't have data. 
             const validYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => i + minYear)
                 .filter(year => !yearsWithoutData.includes(year));
             const sliderContainer = d3.select('#chart1')
@@ -144,7 +152,9 @@
                 });
 
                 const states = topojson.feature(usData, usData.objects.states);
+                // Create projection
                 const projection = d3.geoAlbersUsa().fitSize([mapWidth, mapHeight], states);
+                // GeoPath creation
                 const path = d3.geoPath().projection(projection);
 
                 // Common name to full university name
@@ -186,9 +196,10 @@
                 stateIdData.forEach(state => {
                     stateId[state.state_code] = state.state_name;
                 })
-
+                // Function to allow us to update colors on the map as year changes
                 const updateMapColors = function (selectedYear) {
                     const year = parseInt(selectedYear)
+                    // Handle empty data case still 
                     const stateDraftees = stateMap.get(year) || {}
 
                     // Update the color scale based on the counts for the selected year
@@ -269,6 +280,7 @@
                         .attr("y", -10)
                         .attr("text-anchor", "middle")
                         .style("font-size", "12px")
+                        .style("font-weight", "bold")
                         .text("Number of NFL Draftees");
 
                     const schoolData = Object.entries(stateDraftees).flatMap(([state, { schoolMap }]) =>
@@ -300,12 +312,15 @@
                                 .attr("r", 3)
                                 .style("fill", "red") // TODO: Change fill?
                                 .style("opacity", 0.6)
+                                .attr("cx", 500)
+                                .attr("cy", 300)
                                 .transition()
                                 .duration(500)
                                 .ease(d3.easeCubicInOut)
                                 .attr("cx", d => d.cx)
                                 .attr("cy", d => d.cy)
-                        );
+                        )
+                        .style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
 
                     // Add interactivity
                     circles.on("pointerover", function (event, d) {
@@ -378,6 +393,7 @@
                 function mapZoomed({ transform }) {
                     k = transform.k;
                     svg.select('.legend').style('opacity', k > 1 ? 0 : 1);
+                    viewport.selectAll("circle.school-point").style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
 
                     viewport.attr("transform", transform.toString());
                 }
@@ -394,11 +410,15 @@
     </p>
 
     <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
-        Chart 2: School University to Draft Location Map</h2>
-    <p id="chart2">
-        Here 
+        Chart 2: School University Location To Draft Location</h2>
+        <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
+            We wanted to see the relation between state that the players went to school and the location they ended up in for their draft. Click on a state to see the different location players went to from that state! The thickness of the arrows is proportional to the number of draftees that went to that state! </p>
+    <p id="chart2"
+        style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+   
         <script>
 
+            // Iterable used for statetostate data structure
             let destMap = [["ALABAMA", 0],
             ["ALASKA", 0],
             ["ARIZONA", 0],
@@ -451,8 +471,7 @@
             ["WYOMING", 0]
             ];
 
-
-
+            // Get state from team name
             function getStateFromTeam(team_name) {
 
                 switch (team_name.toLowerCase()) { // Convert to lowercase for case-insensitive matching
@@ -526,7 +545,6 @@
 
             }
 
-
             // Chart Setup
             const C2width = 960;
             const C2height = 620;
@@ -536,6 +554,7 @@
                 .attr('width', C2width)
                 .attr('height', C2height);
 
+            // Geo scale for map
             const usProj = d3
                 .geoAlbersUsa()
                 .scale(1280)
@@ -575,20 +594,25 @@
 
                 // For each draftee collect info on what state they played college level
                 // in, and what state they went to (first) for professional level
-
                 stateToStateMap = new Map();
+
+                // Keep track of largest value for scale
+                let max = 0;
 
                 draftData.forEach(draftee => {
 
+                    // Function to find school of draftee
                     const findSchool = (school) => {
                         const schoolName = school['Name']
                         if (schoolName.includes(draftee.school)) return true
                         return stateCommonName.has(draftee.school);
                     }
 
+                    // Find school of draftee, and get state
                     const playerSchool = schoolData.find(findSchool);
                     let state = playerSchool ? playerSchool['State abbreviation'].toUpperCase() : null;
 
+                    // Find draftee destination and insert into mapping
                     if (state) {
 
                         state = state.toUpperCase();
@@ -597,6 +621,7 @@
                         if (stateToStateMap.has(state)) {
                             let temp = stateToStateMap.get(state);
                             temp.set(dest, temp.get(dest) + 1);
+                            max = temp.get(dest) > max ? temp.get(dest) : max;
                             stateToStateMap.set(state, temp);
                         } else {
                             stateToStateMap.set(state, new Map(destMap));
@@ -609,6 +634,10 @@
 
                 });
 
+                // Domain will be a percent of the whole, range will be from 0 width to 40 width arrows
+                const widthScale = d3.scaleLinear().domain([0, max])
+                    .range([2, 15]);
+
                 let selectedState = null;
 
                 // Draw States
@@ -617,49 +646,63 @@
                     .selectAll("path")
                     .data(topojson.feature(us, us.objects.states).features)
                     .enter().append("path")
-                    .attr("fill", "brown")
-                    .attr("stroke", "lightgray")
+                    .attr("fill", "#f4f1de")
+                    .attr("stroke", "black")
                     .attr("d", path)
+                    // On click 
                     .on("click", function (event, d) {
 
                         const clickedState = d3.select(this);
 
+                        // If double click on state
                         if (selectedState && selectedState.node() === clickedState.node()) {
                             clickedState.transition()
                                 .duration(200)
-                                .attr("fill", "brown")
-                                .attr("stroke-width", 0.5)
+                                .attr("fill", "#f4f1de")
+                                .attr("stroke-width", 1)
                                 .attr("transform", "scale(1)");
                             selectedState = null;
+                            svg2.selectAll("#arrows").remove();
+                            svg2.selectAll("defs").remove();
+
                             return;
                         }
 
-                        const bounds = path.bounds(d); // Get the bounding box of the state
-                        const midX = (bounds[1][0] + bounds[0][0]) / 2; // Center x
-                        const midY = (bounds[1][1] + bounds[0][1]) / 2; // Center y
-
-
+                        // Untransition last state
                         if (selectedState) {
                             selectedState.transition()
                                 .duration(200)
-                                .attr("fill", "brown")
-                                .attr("stroke-width", 0.5)
-                                .attr("transform", "scale(1)"); // Reset scale
+                                .attr("fill", "#f4f1de")
+                                .attr("stroke-width", 1)
+                                .attr("transform", "scale(1)");
                             svg2.selectAll("#arrows").remove();
+                            svg2.selectAll("defs").remove();
+
                         }
 
+                        // Bounds of initial state
+                        const bounds = path.bounds(d);
+                        const midX = (bounds[1][0] + bounds[0][0]) / 2;
+                        const midY = (bounds[1][1] + bounds[0][1]) / 2;
+
+                        // Unselected state animation
+
+
+                        // Bring selected to forefront
                         clickedState.raise();
 
+                        // Clicked state transition
                         clickedState.transition()
                             .duration(200)
                             .attr("fill", "orange")
                             .attr("stroke-width", 2)
                             .attr("transform", `translate(${midX}, ${midY}) scale(1.2) translate(${-midX}, ${-midY})`);
 
+                        // Find map of outgoing values
                         let outgoing = stateToStateMap.get(IDMap.get(d.id).toUpperCase());
 
                         // Arrow drawing function
-                        function drawArrow(init, term, total) {
+                        function drawArrow(init, term, total, partial) {
 
                             let initx = init[0];
                             let inity = init[1];
@@ -667,50 +710,89 @@
                             let termx = term[0];
                             let termy = term[1];
 
-                            svg2.append("line")
-                                .attr("id", "arrows")
-                                .attr("x1", initx)  // Starting x-coordinate
-                                .attr("y1", inity)  // Starting y-coordinate
-                                .attr("x2", termx) // Ending x-coordinate
-                                .attr("y2", termy) // Ending y-coordinate
-                                .attr("stroke", "black") // Line color
-                                .attr("stroke-width", 3); // Line thickness
+                            // In the case we are drawing an arrow from a state to itself
+                            if (initx == termx && inity == termy) {
+
+
+
+                            } else {
+
+                                let distance = Math.pow(Math.pow((initx - termx), 2) + Math.pow((inity - termy), 2), 0.5);
+
+                                let sweepFlag = initx < termx ? 1 : 0;
+
+                                // Draw inner part of arc
+                                let arrow = svg2.append("path")
+                                    .attr("id", "arrows")
+                                    .attr("d", `M ${initx} ${inity} A ${2 * distance} ${2 * distance} 0 0 ${sweepFlag} ${termx} ${termy}`)
+                                    .attr("stroke", "#e07a5f")
+                                    .attr("stroke-width", widthScale(partial))
+                                    .attr("opacity", 0.5)
+                                    .attr("fill", "none");
+
+                                // Animation for arrows
+                                const totalLength = arrow.node().getTotalLength();
+
+                                arrow.attr("stroke-dasharray", totalLength + " " + totalLength)
+                                    .attr("stroke-dashoffset", totalLength)
+                                    .transition()
+                                    .duration(1000)
+                                    .attr("stroke-dashoffset", 0);
+
+                                svg2.append("defs").append("marker")
+                                    .attr("id", "arrowhead")
+                                    .attr("viewBox", "0 -5 10 15")
+                                    .attr("refX", 10)
+                                    .attr("refY", 0)
+                                    .attr("markerWidth", 6)
+                                    .attr("markerHeight", 6)
+                                    .attr("orient", "auto")
+                                    .append("path")
+                                    .attr("d", "M0,-5L13,0L0,5")
+                                    .attr("fill", "#e07a5f")
+                                    .attr("transform", "scale(0)")
+                                    .transition()
+                                    .duration(1000)
+                                    .attr("transform", "scale(1)");
+                            }
                         }
 
                         let sum = 0;
 
                         // Calculate total drafts out of state
-                        outgoing.forEach(out => {
+                        try {
+                            outgoing.forEach(out => {
 
-                            if (!isNaN(out)) sum += out;
+                                if (!isNaN(out)) sum += out;
 
-                        });
+                            });
 
-                        // Draw each outgoing arrow
-                        outgoing.forEach((drafts, state) => {
+                            // Draw each outgoing arrow
+                            outgoing.forEach((drafts, state) => {
 
-                            if (drafts == 0) return;
+                                if (drafts == 0) return;
 
-                            let dest = stateId.find((stateID) =>
-                                (stateID.state_name.toUpperCase() === state)
-                            );
+                                // Get ID for outgoing arrow
+                                let dest = stateId.find((stateID) =>
+                                    (stateID.state_name.toUpperCase() === state)
+                                );
 
-                            if (dest) {
+                                if (dest) {
 
-                                let destBox = topojson.feature(us, us.objects.states).features.find((state_data) => (state_data.id == dest.state_code));
+                                    let destBox = topojson.feature(us, us.objects.states).features.find((state_data) => (state_data.id == dest.state_code));
 
-                                const destBounds = path.bounds(destBox); // Get the bounding box of the state
-                                const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2; // Center x
-                                const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2; // Center y
+                                    const destBounds = path.bounds(destBox);
+                                    const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2;
+                                    const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2;
 
-                                drawArrow([midX, midY], [destMidX, destMidY], sum);
+                                    drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
 
-                            }
-
-
-                            //drawArrow([midX, midY], )
-
-                        });
+                                }
+                            });
+                        } catch {
+                            // We come here if the associated map was never instantiated
+                            // only a problem for Vermont
+                        }
 
                         selectedState = clickedState;
                     });
