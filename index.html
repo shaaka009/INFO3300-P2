@@ -312,7 +312,8 @@
                                 .ease(d3.easeCubicInOut)
                                 .attr("cx", d => d.cx)
                                 .attr("cy", d => d.cy)
-                        );
+                        )
+                        .style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
 
                     // Add interactivity
                     circles.on("pointerover", function (event, d) {
@@ -385,6 +386,7 @@
                 function mapZoomed({ transform }) {
                     k = transform.k;
                     svg.select('.legend').style('opacity', k > 1 ? 0 : 1);
+                    viewport.selectAll("circle.school-point").style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
 
                     viewport.attr("transform", transform.toString());
                 }
