@@ -20,18 +20,26 @@
         #arrows {
             marker-end: url(#arrowhead);
         }
+
+        #arrows-legend {
+            marker-end: url(#arrowhead-legend)
+        }
     </style>
 </head>
 
 <body>
-    
+
     <h1
         style="font-size: 36px; font-family: 'Lato', sans-serif; font-weight: 700; text-align: center; margin-top: 20px;">
         NFL Draft Information</h1>
     <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
         Chart 1: NFL Drafts vs Location</h2>
-        <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
-           We wanted to examine the different schools and see if there were a lot of players that came from specific schools over the years for the NFL Draft. This diagram shows you more information as you zoom in about specific schools and the players! You can also use the slider to check out different years! The different color hues represent the density of players from that state. Explore different years and see the trends of certain states! </p>
+    <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
+        We wanted to examine the different schools and see if there were a lot of players that came from specific
+        schools over the years for the NFL Draft. This diagram shows you more information as you zoom in about specific
+        schools and the players! You can also use the slider to check out different years! The different color hues
+        represent the density of players from that state. Explore different years and see the trends of certain states!
+    </p>
     <p id="chart1"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <script>
@@ -411,64 +419,67 @@
 
     <h2 style="font-family: 'Lato', sans-serif; font-weight: bold; font-size: 28px; color: #333;">
         Chart 2: School University Location To Draft Location</h2>
-        <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
-            We wanted to see the relation between state that the players went to school and the location they ended up in for their draft. Click on a state to see the different location players went to from that state! The thickness of the arrows is proportional to the number of draftees that went to that state! </p>
+    <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
+        We wanted to see the relation between state that the players went to school and the location they ended up in
+        for their draft. Click on a state to see the different location players went to from that state! The thickness
+        of the arrows is proportional to the number of draftees that went to that state! </p>
     <p id="chart2"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-   
+
         <script>
 
             // Iterable used for statetostate data structure
-            let destMap = [["ALABAMA", 0],
-            ["ALASKA", 0],
-            ["ARIZONA", 0],
-            ["ARKANSAS", 0],
-            ["CALIFORNIA", 0],
-            ["COLORADO", 0],
-            ["CONNECTICUT", 0],
-            ["DELAWARE", 0],
-            ["FLORIDA", 0],
-            ["GEORGIA", 0],
-            ["HAWAII", 0],
-            ["IDAHO", 0],
-            ["ILLINOIS", 0],
-            ["INDIANA", 0],
-            ["IOWA", 0],
-            ["KANSAS", 0],
-            ["KENTUCKY", 0],
-            ["LOUISIANA", 0],
-            ["MAINE", 0],
-            ["MARYLAND", 0],
-            ["MASSACHUSETTS", 0],
-            ["MICHIGAN", 0],
-            ["MINNESOTA", 0],
-            ["MISSISSIPPI", 0],
-            ["MISSOURI", 0],
-            ["MONTANA", 0],
-            ["NEBRASKA", 0],
-            ["NEVADA", 0],
-            ["NEW HAMPSHIRE", 0],
-            ["NEW JERSEY", 0],
-            ["NEW MEXICO", 0],
-            ["NEW YORK", 0],
-            ["NORTH CAROLINA", 0],
-            ["NORTH DAKOTA", 0],
-            ["OHIO", 0],
-            ["OKLAHOMA", 0],
-            ["OREGON", 0],
-            ["PENNSYLVANIA", 0],
-            ["RHODE ISLAND", 0],
-            ["SOUTH CAROLINA", 0],
-            ["SOUTH DAKOTA", 0],
-            ["TENNESSEE", 0],
-            ["TEXAS", 0],
-            ["UTAH", 0],
-            ["VERMONT", 0],
-            ["VIRGINIA", 0],
-            ["WASHINGTON", 0],
-            ["WEST VIRGINIA", 0],
-            ["WISCONSIN", 0],
-            ["WYOMING", 0]
+            let destMap = [
+                ["ALASKA", 0],
+                ["ARIZONA", 0],
+                ["ARKANSAS", 0],
+                ["CALIFORNIA", 0],
+                ["COLORADO", 0],
+                ["CONNECTICUT", 0],
+                ["DELAWARE", 0],
+                ["FLORIDA", 0],
+                ["GEORGIA", 0],
+                ["HAWAII", 0],
+                ["IDAHO", 0],
+                ["ILLINOIS", 0],
+                ["INDIANA", 0],
+                ["IOWA", 0],
+                ["KANSAS", 0],
+                ["KENTUCKY", 0],
+                ["LOUISIANA", 0],
+                ["MAINE", 0],
+                ["MARYLAND", 0],
+                ["MASSACHUSETTS", 0],
+                ["MICHIGAN", 0],
+                ["MINNESOTA", 0],
+                ["MISSISSIPPI", 0],
+                ["MISSOURI", 0],
+                ["MONTANA", 0],
+                ["NEBRASKA", 0],
+                ["NEVADA", 0],
+                ["NEW HAMPSHIRE", 0],
+                ["NEW JERSEY", 0],
+                ["NEW MEXICO", 0],
+                ["NEW YORK", 0],
+                ["NORTH CAROLINA", 0],
+                ["NORTH DAKOTA", 0],
+                ["OHIO", 0],
+                ["OKLAHOMA", 0],
+                ["OREGON", 0],
+                ["PENNSYLVANIA", 0],
+                ["RHODE ISLAND", 0],
+                ["SOUTH CAROLINA", 0],
+                ["SOUTH DAKOTA", 0],
+                ["TENNESSEE", 0],
+                ["TEXAS", 0],
+                ["UTAH", 0],
+                ["VERMONT", 0],
+                ["VIRGINIA", 0],
+                ["WASHINGTON", 0],
+                ["WEST VIRGINIA", 0],
+                ["WISCONSIN", 0],
+                ["WYOMING", 0],
+                ["ALABAMA", 0]
             ];
 
             // Get state from team name
@@ -551,7 +562,7 @@
 
             const svg2 = d3.select('#chart2')
                 .append('svg')
-                .attr('width', C2width)
+                .attr('width', C2width + 200)
                 .attr('height', C2height);
 
             // Geo scale for map
@@ -563,7 +574,16 @@
             const map2 = svg2.append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            const path = d3.geoPath().projection(usProj);;
+            const path = d3.geoPath().projection(usProj);
+
+            const chartTitle2 = svg2
+                .append("text")
+                .attr("x", C2width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .style("font-size", "24px")
+                .style("font-family", "Raleway, sans-serif")
+                .text("State by State Draft");
 
             // Access Data 
             Promise.all([
@@ -635,6 +655,7 @@
                 });
 
                 // Domain will be a percent of the whole, range will be from 0 width to 40 width arrows
+                console.log(max);
                 const widthScale = d3.scaleLinear().domain([0, max])
                     .range([2, 15]);
 
@@ -663,9 +684,9 @@
                                 .attr("transform", "scale(1)");
                             selectedState = null;
                             svg2.selectAll("#arrows").remove();
-                            svg2.selectAll("defs").remove();
-
+                            svg2.selectAll("arrowhead").remove();
                             return;
+
                         }
 
                         // Untransition last state
@@ -676,7 +697,7 @@
                                 .attr("stroke-width", 1)
                                 .attr("transform", "scale(1)");
                             svg2.selectAll("#arrows").remove();
-                            svg2.selectAll("defs").remove();
+                            svg2.selectAll("#arrowhead").remove();
 
                         }
 
@@ -684,9 +705,6 @@
                         const bounds = path.bounds(d);
                         const midX = (bounds[1][0] + bounds[0][0]) / 2;
                         const midY = (bounds[1][1] + bounds[0][1]) / 2;
-
-                        // Unselected state animation
-
 
                         // Bring selected to forefront
                         clickedState.raise();
@@ -791,13 +809,47 @@
                             });
                         } catch {
                             // We come here if the associated map was never instantiated
-                            // only a problem for Vermont
+                            // only a problem for Vermont! No drafts
                         }
 
                         selectedState = clickedState;
                     });
 
 
+                const yScale = d3.scaleLinear().domain([0, 318]).range([C2height - 300, 0]);
+                let leftAxis = d3.axisLeft(yScale);
+
+                // Draw legend 
+                svg2.append('g')
+                    .attr('class', 'y axis')
+                    .attr('transform', `translate(${C2width + 35},150)`)
+                    .call(leftAxis);
+
+                svg2.append("defs").append("marker")
+                    .attr("id", "arrowhead-legend")
+                    .attr("viewBox", "0 -5 10 15")
+                    .attr("refX", 10)
+                    .attr("refY", 0)
+                    .attr("markerWidth", 6)
+                    .attr("markerHeight", 6)
+                    .attr("orient", "auto")
+                    .append("path")
+                    .attr("d", "M0,-5L13,0L0,5")
+                    .attr("fill", "#e07a5f");
+
+                let num_arrows = 6
+                for (let i = 0; i < num_arrows; i++) {
+                    svg2.append("line")
+                        .attr("id", "arrows-legend")
+                        .attr("x1", C2width + 50)
+                        .attr("y1", 160 + i * 60)
+                        .attr("x2", C2width + 135)
+                        .attr("y2", 160 + i * 60)
+                        .attr("stroke", "#e07a5f")
+                        .attr("stroke-width", widthScale((6 - i) * 53))
+                        .attr("opacity", 0.5)
+                        .attr("fill", "none");
+                }
 
             });
 
