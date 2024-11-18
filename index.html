@@ -48,7 +48,7 @@
     <p id="chart1"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <script>
-            const svgWidth = 1200;
+            const svgWidth = 1400;
             const svgHeight = 650;
             // global zoom factor to keep track how much we've zoomed in so far
             var k = 1;
@@ -67,7 +67,7 @@
                 .style("font-family", "Raleway, sans-serif")
                 .text(`${defaultYear} NFL Drafts`)
 
-            const margin = { top: 20, right: 100, bottom: 20, left: 20 };
+            const margin = { top: 20, right: 110, bottom: 20, left: 20 };
             const mapWidth = svgWidth - margin.left - margin.right;
             const mapHeight = svgHeight - margin.top - margin.bottom;
             const map = svg.append("g")
@@ -248,7 +248,7 @@
                     const g = svg
                         .append('g')
                         .attr('class', 'legend')
-                        .attr('transform', `translate(${mapWidth + 30}, 100)`)
+                        .attr('transform', `translate(${mapWidth + 10}, 100)`)
                         .attr('opacity', k > 1 ? 0 : 1);
 
                     const defs = svg.append("defs");
