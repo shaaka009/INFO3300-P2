@@ -104,6 +104,8 @@
                 .style('background', '#ddd')
                 .style('outline', 'none')
                 .style('border-radius', '5px')
+                .style('position','relative')
+                .style('z-index',2)
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
@@ -116,6 +118,7 @@
                 .style('left', '0')
                 .style('transform', 'translateX(-10%)')
                 .style('font-size', '14px')
+                .style('z-index',1)
                 .text(minYear);
 
             // Max label
