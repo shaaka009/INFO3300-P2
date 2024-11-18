@@ -758,8 +758,8 @@
 
             }
 
-            const tooltip = d3.select("body").append("div")
-                .attr("class", "tooltip")
+            const tooltip2 = d3.select("body").append("div")
+                .attr("class", "tooltip2")
                 .style("position", "absolute")
                 .style("visibility", "hidden")
                 .style("background-color", "white")
@@ -898,7 +898,7 @@
                     // On click 
                     .on("click", function (event, d) {
 
-                        tooltip.style("visibility", "hidden");
+                        tooltip2.style("visibility", "hidden");
                         const clickedState = d3.select(this);
 
                         // If double click on state
@@ -1055,7 +1055,7 @@
                         const outgoing = stateToStateMap.get(IDMap.get(selectedState.datum().id).toUpperCase());
                         const draftData = outgoing ? outgoing.get(hoveredState) || 0 : 0;
 
-                        tooltip
+                        tooltip2
                             .style("visibility", "visible")
                             .style("top", `${event.pageY + 10}px`)
                             .style("left", `${event.pageX + 10}px`)
@@ -1063,10 +1063,10 @@
 
                     })
                     .on("mouseout", function () {
-                        tooltip.style("visibility", "hidden");
+                        tooltip2.style("visibility", "hidden");
                     })
                     .on("mousemove", function (event) {
-                        tooltip
+                        tooltip2
                             .style("top", `${event.pageY + 10}px`)
                             .style("left", `${event.pageX + 10}px`);
                     });
