@@ -90,7 +90,7 @@
                 .style('position', 'relative')
                 .style('width', `${sliderWidth}px`)
                 .style('height', `${sliderHeight * 5}px`)
-                .style('margin-bottom', '20px');
+                .style('margin-bottom', '40px');
 
             // Add slider
             // Slider input element
@@ -107,6 +107,8 @@
                 .style('background', '#ddd')
                 .style('outline', 'none')
                 .style('border-radius', '5px')
+                .style('position','relative')
+                .style('z-index',2)
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
@@ -119,6 +121,7 @@
                 .style('left', '0')
                 .style('transform', 'translateX(-10%)')
                 .style('font-size', '14px')
+                .style('z-index',1)
                 .text(minYear);
 
             // Max label
