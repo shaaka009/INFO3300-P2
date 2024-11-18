@@ -440,11 +440,9 @@
                         const barChartHeight = 150;
                         const margin = { top: 20, right: 20, bottom: 30, left: 40 };
 
-                        // Assuming you have a tooltip element that you can select and get its position
                         const tooltipBoundingBox = tooltip.node().getBoundingClientRect();
 
-                        // Calculate position just below the tooltip
-                        const tooltipBottom = tooltipBoundingBox.bottom;  // Y position at the bottom of the tooltip
+                        const tooltipBottom = tooltipBoundingBox.bottom;
 
                         const barSvg = d3.select("body")
                             .append("svg")
@@ -452,8 +450,8 @@
                             .attr("width", barChartWidth + margin.left + margin.right)
                             .attr("height", barChartHeight + margin.top + margin.bottom)
                             .style("position", "absolute")
-                            .style("left", `${event.pageX + 50}px`)  // Align with tooltip's left position
-                            .style("top", `${event.pageY + 40}px`)  // Position below the tooltip with some space
+                            .style("left", `${event.pageX + 50}px`)
+                            .style("top", `${event.pageY + 40}px`)
                             .style("background", "#f9f9f9")
                             .style("border", "1px solid #ccc")
                             .style("padding", "10px");
@@ -498,30 +496,24 @@
                             .style("stroke", d => d == chartTitle.text().split(" ")[0] ? "black" : "none")
                             .style("stroke-width", d => d == chartTitle.text().split(" ")[0] ? 2 : 0);
 
-                        // TODO: Clicking bar should change state and update slider and vice versa (slider change should deselect circle if needed --> year does not exist)
-
                         let barYear = 2021;
-                        // Add hover interactions for highlighting
                         bars.on("mouseover", function (event, d) {
-                            // Highlight the hovered bar by changing its color
                             d3.select(this)
                                 .style("fill", "orange")
                                 .style("stroke", "black")
                                 .style("stroke-width", 2);
 
-                            // Display the year of the hovered bar under the chart
                             yearLabel.transition().duration(200)
-                                .style("opacity", 1)  // Make the year text visible
-                                .text(d);  // Set the text to the year of the hovered bar
+                                .style("opacity", 1)
+                                .text(d);
                             barYear = d;
 
-                            // Display the value at the top of the hovered bar
                             valueLabel.transition().duration(200)
-                                .style("opacity", 1)  // Make the value text visible
-                                .text(yearlyData[d].length)  // Set the value to the data for t
-                                .attr("x", x(d) + x.bandwidth() / 2)  // Center it on top of the bar
-                                .attr("y", y(yearlyData[d].length) - 5)  // Position it just above the bar
-                                .attr("text-anchor", "middle");  // Center the text horizontally
+                                .style("opacity", 1)
+                                .text(yearlyData[d].length)
+                                .attr("x", x(d) + x.bandwidth() / 2)
+                                .attr("y", y(yearlyData[d].length) - 5)
+                                .attr("text-anchor", "middle");
 
                             tooltip.html(`
                                 <strong>School:</strong> ${tooltipSchoolName}<br>
@@ -566,7 +558,7 @@
                         event.stopPropagation();
                     })
 
-                    viewport.on("click", function (event, d) {
+                    svg.on("click", function (event, d) {
                         circles.transition().style("opacity", 0.6).attr("r", 3);
                         d3.select(".tooltip").remove();
                         d3.select(".bar-chart").remove();
