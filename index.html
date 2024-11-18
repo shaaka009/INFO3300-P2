@@ -74,7 +74,7 @@
             const viewport = map.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
             // Define slider info and exclude years without data
-            const sliderWidth = 300;
+            const sliderWidth = 600;
             const sliderHeight = 10;
             const minYear = 1967;
             const maxYear = 2021;
@@ -86,7 +86,8 @@
                 .append('div')
                 .style('position', 'relative')
                 .style('width', `${sliderWidth}px`)
-                .style('height', `${sliderHeight * 3}px`);
+                .style('height', `${sliderHeight * 5}px`)
+                .style('margin-bottom', '20px');
 
             // Add slider
             // Slider input element
@@ -111,16 +112,34 @@
 
             sliderContainer.append('span')
                 .style('position', 'absolute')
-                .style('top', `${sliderHeight * 1.5}px`)
-                .style('left', '-10px')
+                .style('top', `${sliderHeight * 2.5}px`)
+                .style('left', '0')
+                .style('transform', 'translateX(-10%)')
+                .style('font-size', '14px')
                 .text(minYear);
 
             // Max label
             sliderContainer.append('span')
                 .style('position', 'absolute')
-                .style('top', `${sliderHeight * 1.5}px`)
-                .style('right', '-15px')
+                .style('top', `${sliderHeight * 2.5}px`)
+                .style('right', '0')
+                .style('transform', 'translateX(30%)')
+                .style('font-size', '14px')
                 .text(maxYear);
+            sliderContainer.append('div')
+                .style('position', 'absolute')
+                .style('top', `${sliderHeight * 1.4}px`)
+                .style('left', `${6}px`)
+                .style('width', '1px')
+                .style('height', '10px')
+                .style('background', '#333');
+            sliderContainer.append('div')
+                .style('position', 'absolute')
+                .style('top', `${sliderHeight * 1.4}px`)
+                .style('left', `${sliderWidth - 6}px`)
+                .style('width', '1px')
+                .style('height', '10px')
+                .style('background', '#333');
 
             for (let year = minYear; year <= maxYear; year++) {
                 if (!yearsWithoutData.includes(year)) {
@@ -130,17 +149,18 @@
                     if (year % 5 === 0 && year > 1970 && year < 2020) {
                         sliderContainer.append('div')
                             .style('position', 'absolute')
-                            .style('top', `${sliderHeight * 1.1}px`)
+                            .style('top', `${sliderHeight * 1.4}px`)
                             .style('left', `${position}px`)
                             .style('width', '1px')
-                            .style('height', '8px')
+                            .style('height', '10px')
                             .style('background', '#333');
+
                         sliderContainer.append('span')
                             .style('position', 'absolute')
-                            .style('top', `${sliderHeight * 2}px`)
+                            .style('top', `${sliderHeight * 2.5}px`)
                             .style('left', `${position}px`)
                             .style('transform', 'translateX(-50%)')
-                            .style('font-size', '10px')
+                            .style('font-size', '14px')
                             .text(year);
                     }
                 }
