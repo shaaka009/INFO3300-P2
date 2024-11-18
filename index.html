@@ -19,10 +19,15 @@
 
         #arrows {
             marker-end: url(#arrowhead);
+            pointer-events: none;
         }
 
         #arrows-legend {
             marker-end: url(#arrowhead-legend)
+        }
+
+        #point-value {
+            pointer-events: none;
         }
 
         .state {
@@ -442,7 +447,8 @@
 
                         const tooltipBoundingBox = tooltip.node().getBoundingClientRect();
 
-                        const tooltipBottom = tooltipBoundingBox.bottom;
+                        // Calculate position just below the tooltip
+                        const tooltipBottom = tooltipBoundingBox.bottom;  // Y position at the bottom of the tooltip
 
                         const barSvg = d3.select("body")
                             .append("svg")
@@ -629,6 +635,24 @@
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
 
         <script>
+
+            function coordCorrection(id) {
+
+                switch (Number(id)) {
+                    case 2: return [0, -10];
+                    case 6: return [-10, 10];
+                    case 12: return [40, 0];
+                    case 16: return [0, 40];
+                    case 22: return [-15, 0];
+                    case 24: return [5, -5];
+                    case 26: return [25, 30];
+                    case 27: return [-15, 0];
+                    case 37: return [20, 0];
+                    case 51: return [20, 5];
+                    default: return [0, 0];
+                }
+
+            }
 
             // Iterable used for statetostate data structure
             let destMap = [
@@ -867,11 +891,23 @@
                 });
 
                 // Domain will be a percent of the whole, range will be from 0 width to 40 width arrows
-                console.log(max);
                 const widthScale = d3.scaleLinear().domain([0, max])
                     .range([2, 15]);
 
+                let hoverFlag = false;
+
+                let clickedState = null;
                 let selectedState = null;
+                let bounds = 0;
+                let midX = 0;
+                let midY = 0;
+
+                let destBounds = 0;
+                let hoverMidX = 0;
+                let hoverMidy = 0;
+
+                let outgoing = null;
+
 
                 // Draw States
                 svg2.append("g")
@@ -897,6 +933,8 @@
                             selectedState = null;
                             svg2.selectAll("#arrows").remove();
                             svg2.selectAll("arrowhead").remove();
+                            svg2.selectAll("#point-value").remove();
+                            hoverFlag = false;
                             return;
 
                         }
@@ -910,13 +948,16 @@
                                 .attr("transform", "scale(1)");
                             svg2.selectAll("#arrows").remove();
                             svg2.selectAll("#arrowhead").remove();
+                            svg2.selectAll("#point-value").remove();
 
                         }
 
                         // Bounds of initial state
-                        const bounds = path.bounds(d);
-                        const midX = (bounds[1][0] + bounds[0][0]) / 2;
-                        const midY = (bounds[1][1] + bounds[0][1]) / 2;
+                        bounds = path.bounds(d);
+                        let startCorrection = coordCorrection(d.id);
+
+                        midX = ((bounds[1][0] + bounds[0][0]) / 2) + startCorrection[0];
+                        midY = ((bounds[1][1] + bounds[0][1]) / 2) + startCorrection[1];
 
                         // Bring selected to forefront
                         clickedState.raise();
@@ -929,9 +970,7 @@
                             .attr("transform", `translate(${midX}, ${midY}) scale(1.2) translate(${-midX}, ${-midY})`);
 
                         // Find map of outgoing values
-                        let outgoing = stateToStateMap.get(IDMap.get(d.id).toUpperCase());
-                        
-                                                
+                        outgoing = stateToStateMap.get(IDMap.get(d.id).toUpperCase());
 
                         // Arrow drawing function
                         function drawArrow(init, term, total, partial) {
@@ -993,6 +1032,7 @@
 
                         // Calculate total drafts out of state
                         try {
+                            hoverFlag = true;
                             outgoing.forEach(out => {
 
                                 if (!isNaN(out)) sum += out;
@@ -1013,9 +1053,11 @@
 
                                     let destBox = topojson.feature(us, us.objects.states).features.find((state_data) => (state_data.id == dest.state_code));
 
+                                    let correction = coordCorrection(dest.state_code);
+
                                     const destBounds = path.bounds(destBox);
-                                    const destMidX = (destBounds[1][0] + destBounds[0][0]) / 2;
-                                    const destMidY = (destBounds[1][1] + destBounds[0][1]) / 2;
+                                    const destMidX = ((destBounds[1][0] + destBounds[0][0]) / 2) + correction[0];
+                                    const destMidY = ((destBounds[1][1] + destBounds[0][1]) / 2) + correction[1];
 
                                     drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
 
@@ -1028,27 +1070,41 @@
 
                         selectedState = clickedState;
                     })
-                    .on("mouseover",function(event,d) {
-                        if (!selectedState || selectedState.datum().id == d.id) return; // Skip hover if no state is selected
+                    .on("mouseover", function (event, d) {
+                        console.log(d.id);
+                        if (hoverFlag) {
 
-                        const hoveredState = IDMap.get(d.id).toUpperCase();
-                        const outgoing = stateToStateMap.get(IDMap.get(selectedState.datum().id).toUpperCase());
-                        const draftData = outgoing ? outgoing.get(hoveredState) || 0 : 0;
+                            let dest = stateId.find((stateID) =>
+                                (stateID.state_code == d.id)
+                            );
 
-                        tooltip
-                            .style("visibility", "visible")
-                            .style("top", `${event.pageY + 10}px`)
-                            .style("left", `${event.pageX + 10}px`)
-                            .html(`<strong>${hoveredState}</strong>: ${draftData} drafts`);
+                            destBounds = path.bounds(d);
+                            destCorrection = coordCorrection(dest.state_code)
+                            const destMidX = ((destBounds[1][0] + destBounds[0][0]) / 2) + destCorrection[0];
+                            const destMidY = ((destBounds[1][1] + destBounds[0][1]) / 2) + destCorrection[1];
+
+                            svg2.append("text")
+                                .attr("id", "point-value")
+                                .attr("x", destMidX)
+                                .attr("y", destMidY)
+                                .attr("text-anchor", "middle")
+                                .attr("font-family", "Raleway")
+                                .style("font-size", "12px")
+                                .style("font-weight", "bold")
+                                .text(outgoing.get(dest.state_name.toUpperCase()))
+                                .attr("opacity", 0)
+                                .transition()
+                                .duration(300)
+                                .attr("opacity", 1);
+
+                        }
                     })
-                    .on("mouseout", function(){
-                        tooltip.style("visibility", "hidden");
-                    })
-                    .on("mousemove",function(event){
-                        tooltip
-                            .style("top", `${event.pageY + 10}px`)
-                            .style("left", `${event.pageX + 10}px`);
+                    .on("mouseout", function (event, d) {
+
+                        svg2.selectAll("#point-value").remove();
+
                     });
+
 
                 const yScale = d3.scaleLinear().domain([0, 318]).range([C2height - 300, 0]);
                 let leftAxis = d3.axisLeft(yScale);
