@@ -107,8 +107,8 @@
                 .style('background', '#ddd')
                 .style('outline', 'none')
                 .style('border-radius', '5px')
-                .style('position','relative')
-                .style('z-index',2)
+                .style('position', 'relative')
+                .style('z-index', 2)
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
@@ -121,7 +121,7 @@
                 .style('left', '0')
                 .style('transform', 'translateX(-10%)')
                 .style('font-size', '14px')
-                .style('z-index',1)
+                .style('z-index', 1)
                 .text(minYear);
 
             // Max label
@@ -185,6 +185,11 @@
                 slider.on('pointerup', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
+
+                    const circles = viewport.selectAll("circle.school-point")
+                    circles.transition().style("opacity", 0.6).attr("r", 3);
+                    d3.select(".tooltip").remove();
+                    d3.select(".bar-chart").remove();
 
                     // Update only on release to improve performance
                     updateMapColors(selectedYear);
