@@ -191,6 +191,11 @@
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
 
+                    const circles = viewport.selectAll("circle.school-point")
+                    circles.transition().style("opacity", 0.6).attr("r", 3);
+                    d3.select(".tooltip").remove();
+                    d3.select(".bar-chart").remove();
+
                     // Update only on release to improve performance
                     updateMapColors(selectedYear);
                 });
@@ -228,6 +233,7 @@
                         if (!stateMap.has(draftYear)) stateMap.set(draftYear, {});
                         if (!stateMap.get(draftYear)[state]) stateMap.get(draftYear)[state] = { numPlayers: 0, schoolMap: {} }
                         const { numPlayers, schoolMap } = stateMap.get(draftYear)[state]
+                        playerSchool['nflSchool'] = player.school;
                         const playerSchoolJson = JSON.stringify(playerSchool)
                         if (!schoolMap[playerSchoolJson]) schoolMap[playerSchoolJson] = []
                         schoolMap[playerSchoolJson].push(player);
@@ -274,20 +280,19 @@
                         .join("text")
                         .attr("class", "state-label")
                         .attr("x", d => {
-                            const centroid = path.centroid(d); // Get the centroid of the state
-                            return centroid[0]; // x-coordinate
+                            const centroid = path?.centroid(d); // Get the centroid of the state
+                            return isNaN(centroid[0]) ? 0 : centroid[0];
                         })
                         .attr("y", d => {
-                            const centroid = path.centroid(d); // Get the centroid of the state
-                            return centroid[1]; // y-coordinate
+                            const centroid = path?.centroid(d); // Get the centroid of the state
+                            return isNaN(centroid[1]) ? 0 : centroid[1];
                         })
                         .attr("text-anchor", "middle")
                         .style("font-size", "10px")
                         .style("font-family", "Raleway, sans-serif")
                         .style("font-weight", "bold")
                         .style("fill", "gray")
-                        .text(d => stateId[d.id]?.abbr == 'DC' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
-
+                        .text(d => stateId[d.id]?.abbr == 'DC' || stateId[d.id]?.abbr == 'PR' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
                     // Create legend
                     const legendWidth = 30;
                     const legendHeight = 400;
@@ -360,6 +365,7 @@
                                 schoolProjection,
                                 cx: schoolProjection[0],
                                 cy: schoolProjection[1],
+                                nflSchoolId: playerSchool.nflSchool,
                                 schoolName: playerSchool.Name,  // Include school name for tooltip
                                 players: players  // Include player information
                             };
@@ -386,8 +392,10 @@
                         .style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
 
                     // Add interactivity
-                    circles.on("pointerover", function (event, d) {
-                        circles.transition().style("opacity", 0.2);
+                    circles.on("click", function (event, d) {
+                        d3.select(".tooltip").remove();
+                        d3.select(".bar-chart").remove();
+                        circles.transition().style("opacity", 0.2).attr("r", 3);
 
                         d3.select(this)
                             .transition()
@@ -395,6 +403,7 @@
                             .style("opacity", 1);
 
                         // Tooltip display
+                        const tooltipSchoolName = d.schoolName;
                         const tooltip = d3.select("body").append("div")
                             .attr("class", "tooltip")
                             .style("position", "absolute")
@@ -403,23 +412,134 @@
                             .style("padding", "5px")
                             .style("opacity", 1)
                             .html(`
-                                   <strong>School:</strong> ${d.schoolName}<br>
-                                   <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
-                               `);
-
-                        tooltip.style("left", `${event.pageX + 5}px`)
+                                    <strong>School:</strong> ${tooltipSchoolName}<br>
+                                    <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
+                                `);
+                        tooltip.style("left", `${event.pageX + 50}px`)
                             .style("top", `${event.pageY - 30}px`);
-                    })
-                        .on("pointerout", function () {
-                            circles.transition().style("opacity", 0.6);
+
+                        // Bar chart data
+                        const nflSchoolId = d.nflSchoolId;
+                        const calculateYearlyData = (nflData, schoolName) => {
+                            const schoolData = nflData.filter(d => d.school === schoolName);
+                            const yearlyData = schoolData.reduce((acc, d) => {
+                                if (!acc[d.draft_year]) {
+                                    acc[d.draft_year] = [];
+                                }
+                                acc[d.draft_year].push(d.player_name);
+                                return acc;
+                            }, {});
+                            return yearlyData;
+                        };
+                        const yearlyData = calculateYearlyData(nflData, nflSchoolId);
+                        const years = Object.keys(yearlyData).sort((a, b) => +a - +b).map(d => parseInt(d));
+                        const values = years.map(year => yearlyData[year].length);
+                        const barChartWidth = 350;
+                        const barChartHeight = 150;
+                        const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+                        const tooltipBoundingBox = tooltip.node().getBoundingClientRect();
+                        // Calculate position just below the tooltip
+                        const tooltipBottom = tooltipBoundingBox.bottom;  // Y position at the bottom of the tooltip
+                        const barSvg = d3.select("body")
+                            .append("svg")
+                            .attr("class", "bar-chart")
+                            .attr("width", barChartWidth + margin.left + margin.right)
+                            .attr("height", barChartHeight + margin.top + margin.bottom)
+                            .style("position", "absolute")
+                            .style("left", `${event.pageX + 50}px`)
+                            .style("top", `${event.pageY + 40}px`)
+                            .style("background", "#f9f9f9")
+                            .style("border", "1px solid #ccc")
+                            .style("padding", "10px");
+                        const chartGroup = barSvg.append("g")
+                            .attr("transform", `translate(${margin.left},${margin.top})`);
+                        const x = d3.scaleBand()
+                            .domain(years)
+                            .range([0, barChartWidth])
+                            .padding(0.1);
+                        const y = d3.scaleLinear()
+                            .domain([0, d3.max(values)])
+                            .nice()
+                            .range([barChartHeight, 0]);
+                        // Create the X axis
+                        chartGroup.append("g")
+                            .attr("transform", `translate(0,${barChartHeight})`)
+                            .call(d3.axisBottom(x).tickFormat(d => d).tickValues([selectedYear]));
+                        // Create the Y axis
+                        chartGroup.append("g")
+                            .call(d3.axisLeft(y).ticks(5));
+                        // Create the bars
+                        const bars = chartGroup.selectAll(".bar")
+                            .data(years)
+                            .join("rect")
+                            .attr("class", "bar")
+                            .attr("x", d => x(d))
+                            .attr("y", d => y(yearlyData[d].length))
+                            .attr("width", x.bandwidth())
+                            .attr("height", d => barChartHeight - y(yearlyData[d].length))
+                            .style("fill", d => d === chartTitle.text().split(" ")[0] ? "steelblue" : "#bbb")
+                            .style("stroke", d => d === chartTitle.text().split(" ")[0] ? "black" : "none")
+                            .style("stroke-width", 2);
+                        chartGroup.selectAll(".bar")
+                            .style("fill", d => d == chartTitle.text().split(" ")[0] ? "steelblue" : "#bbb")
+                            .style("stroke", d => d == chartTitle.text().split(" ")[0] ? "black" : "none")
+                            .style("stroke-width", d => d == chartTitle.text().split(" ")[0] ? 2 : 0);
+                        let barYear = 2021;
+                        bars.on("mouseover", function (event, d) {
 
                             d3.select(this)
-                                .transition()
-                                .attr("r", 3)
-                                .style("opacity", 0.6);
-
-                            d3.select(".tooltip").remove();
+                                .style("fill", "orange")
+                                .style("stroke", "black")
+                                .style("stroke-width", 2);
+                            yearLabel.transition().duration(200)
+                                .style("opacity", 1)
+                                .text(d);
+                            barYear = d;
+                            valueLabel.transition().duration(200)
+                                .style("opacity", 1)
+                                .text(yearlyData[d].length)
+                                .attr("x", x(d) + x.bandwidth() / 2)
+                                .attr("y", y(yearlyData[d].length) - 5)
+                                .attr("text-anchor", "middle");
+                            tooltip.html(`
+                                <strong>School:</strong> ${tooltipSchoolName}<br>
+                                <strong>Players:</strong> ${yearlyData[d].join(", ")}
+                            `);
+                        }).on("mouseout", function () {
+                            const highlight = barYear == chartTitle.text().split(" ")[0];
+                            // Reset the bar color when the mouse leaves
+                            d3.select(this)
+                                .style("fill", d => highlight ? "steelblue" : "#bbb")
+                                .style("stroke", d => highlight ? "black" : "none")
+                                .style("stroke-width", 2);
+                            // Hide the year text when the mouse leaves
+                            yearLabel.transition().duration(200)
+                                .style("opacity", 0);  // Make the year text invisible again
+                            // Hide the value text when the mouse leaves
+                            valueLabel.transition().duration(200)
+                                .style("opacity", 0);  // Make the value text invisible again
                         })
+                        const yearLabel = chartGroup.append("text")
+                            .attr("class", "yearLabel")
+                            .attr("x", barChartWidth / 2)
+                            .attr("y", barChartHeight + 30)
+                            .attr("text-anchor", "middle")
+                            .style("font-size", "16px")
+                            .style("opacity", 0);
+                        const valueLabel = chartGroup.append("text")
+                            .attr("class", "valueLabel")
+                            .attr("x", barChartWidth / 2)
+                            .attr("y", barChartHeight - 10)
+                            .attr("text-anchor", "middle")
+                            .style("font-size", "16px")
+                            .style("opacity", 0);
+                        event.stopPropagation();
+                    })
+                    svg.on("click", function (event, d) {
+                        circles.transition().style("opacity", 0.6).attr("r", 3);
+                        d3.select(".tooltip").remove();
+                        d3.select(".bar-chart").remove();
+                    });
 
                     // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
                     viewport.selectAll(".state").on("click", clicked);
@@ -456,7 +576,14 @@
                 function mapZoomed({ transform }) {
                     k = transform.k;
                     svg.select('.legend').style('opacity', k > 1 ? 0 : 1);
-                    viewport.selectAll("circle.school-point").style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
+
+                    const circles = viewport.selectAll("circle.school-point");
+                    circles.style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
+                    if (k < 2) {
+                        circles.transition().style("opacity", 0.6).attr("r", 3);
+                        d3.select(".tooltip").remove();
+                        d3.select(".bar-chart").remove();
+                    }
 
                     viewport.attr("transform", transform.toString());
                 }
