@@ -40,8 +40,10 @@
         Chart 1: NFL Drafts vs Location</h2>
     <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
         We wanted to examine the different schools and see if there were a lot of players that came from specific
-        schools over the years for the NFL Draft. This diagram shows you more information as you <b>zoom in </b>about specific
-        schools and the players! You can also <b>use the slider </b>to check out different years! The different color hues
+        schools over the years for the NFL Draft. This diagram shows you more information as you <b>zoom in </b>about
+        specific
+        schools and the players! You can also <b>use the slider </b>to check out different years! The different color
+        hues
         represent the density of players from that state. Explore different years and see the trends of certain states!
     </p>
     <p id="chart1"
@@ -105,8 +107,8 @@
                 .style('background', '#ddd')
                 .style('outline', 'none')
                 .style('border-radius', '5px')
-                .style('position','relative')
-                .style('z-index',2)
+                .style('position', 'relative')
+                .style('z-index', 2)
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
@@ -119,7 +121,7 @@
                 .style('left', '0')
                 .style('transform', 'translateX(-10%)')
                 .style('font-size', '14px')
-                .style('z-index',1)
+                .style('z-index', 1)
                 .text(minYear);
 
             // Max label
@@ -184,6 +186,11 @@
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
 
+                    const circles = viewport.selectAll("circle.school-point")
+                    circles.transition().style("opacity", 0.6).attr("r", 3);
+                    d3.select(".tooltip").remove();
+                    d3.select(".bar-chart").remove();
+
                     // Update only on release to improve performance
                     updateMapColors(selectedYear);
                 });
@@ -221,6 +228,7 @@
                         if (!stateMap.has(draftYear)) stateMap.set(draftYear, {});
                         if (!stateMap.get(draftYear)[state]) stateMap.get(draftYear)[state] = { numPlayers: 0, schoolMap: {} }
                         const { numPlayers, schoolMap } = stateMap.get(draftYear)[state]
+                        playerSchool['nflSchool'] = player.school;
                         const playerSchoolJson = JSON.stringify(playerSchool)
                         if (!schoolMap[playerSchoolJson]) schoolMap[playerSchoolJson] = []
                         schoolMap[playerSchoolJson].push(player);
@@ -267,19 +275,19 @@
                         .join("text")
                         .attr("class", "state-label")
                         .attr("x", d => {
-                            const centroid = path.centroid(d); // Get the centroid of the state
-                            return centroid[0]; // x-coordinate
+                            const centroid = path?.centroid(d); // Get the centroid of the state
+                            return isNaN(centroid[0]) ? 0 : centroid[0];
                         })
                         .attr("y", d => {
-                            const centroid = path.centroid(d); // Get the centroid of the state
-                            return centroid[1]; // y-coordinate
+                            const centroid = path?.centroid(d); // Get the centroid of the state
+                            return isNaN(centroid[1]) ? 0 : centroid[1];
                         })
                         .attr("text-anchor", "middle")
                         .style("font-size", "10px")
                         .style("font-family", "Raleway, sans-serif")
                         .style("font-weight", "bold")
                         .style("fill", "gray")
-                        .text(d => stateId[d.id]?.abbr == 'DC' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
+                        .text(d => stateId[d.id]?.abbr == 'DC' || stateId[d.id]?.abbr == 'PR' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
 
                     // Create legend
                     const legendWidth = 30;
@@ -354,6 +362,7 @@
                                 cx: schoolProjection[0],
                                 cy: schoolProjection[1],
                                 schoolName: playerSchool.Name,  // Include school name for tooltip
+                                nflSchoolId: playerSchool.nflSchool,
                                 players: players  // Include player information
                             };
                         })
@@ -379,8 +388,10 @@
                         .style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
 
                     // Add interactivity
-                    circles.on("pointerover", function (event, d) {
-                        circles.transition().style("opacity", 0.2);
+                    circles.on("click", function (event, d) {
+                        d3.select(".tooltip").remove();
+                        d3.select(".bar-chart").remove();
+                        circles.transition().style("opacity", 0.2).attr("r", 3);;
 
                         d3.select(this)
                             .transition()
@@ -388,6 +399,7 @@
                             .style("opacity", 1);
 
                         // Tooltip display
+                        const tooltipSchoolName = d.schoolName;
                         const tooltip = d3.select("body").append("div")
                             .attr("class", "tooltip")
                             .style("position", "absolute")
@@ -396,23 +408,161 @@
                             .style("padding", "5px")
                             .style("opacity", 1)
                             .html(`
-                                    <strong>School:</strong> ${d.schoolName}<br>
+                                    <strong>School:</strong> ${tooltipSchoolName}<br>
                                     <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
                                 `);
 
-                        tooltip.style("left", `${event.pageX + 5}px`)
+                        tooltip.style("left", `${event.pageX + 50}px`)
                             .style("top", `${event.pageY - 30}px`);
-                    })
-                        .on("pointerout", function () {
-                            circles.transition().style("opacity", 0.6);
 
+                        // Bar chart data
+                        const nflSchoolId = d.nflSchoolId;
+                        const calculateYearlyData = (nflData, schoolName) => {
+                            const schoolData = nflData.filter(d => d.school === schoolName);
+
+                            const yearlyData = schoolData.reduce((acc, d) => {
+                                if (!acc[d.draft_year]) {
+                                    acc[d.draft_year] = [];
+                                }
+                                acc[d.draft_year].push(d.player_name);
+                                return acc;
+                            }, {});
+
+                            return yearlyData;
+                        };
+
+                        const yearlyData = calculateYearlyData(nflData, nflSchoolId);
+
+                        const years = Object.keys(yearlyData).sort((a, b) => +a - +b).map(d => parseInt(d));
+                        const values = years.map(year => yearlyData[year].length);
+
+                        const barChartWidth = 350;
+                        const barChartHeight = 150;
+                        const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+
+                        const tooltipBoundingBox = tooltip.node().getBoundingClientRect();
+
+                        const tooltipBottom = tooltipBoundingBox.bottom;
+
+                        const barSvg = d3.select("body")
+                            .append("svg")
+                            .attr("class", "bar-chart")
+                            .attr("width", barChartWidth + margin.left + margin.right)
+                            .attr("height", barChartHeight + margin.top + margin.bottom)
+                            .style("position", "absolute")
+                            .style("left", `${event.pageX + 50}px`)
+                            .style("top", `${event.pageY + 40}px`)
+                            .style("background", "#f9f9f9")
+                            .style("border", "1px solid #ccc")
+                            .style("padding", "10px");
+
+                        const chartGroup = barSvg.append("g")
+                            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                        const x = d3.scaleBand()
+                            .domain(years)
+                            .range([0, barChartWidth])
+                            .padding(0.1);
+
+                        const y = d3.scaleLinear()
+                            .domain([0, d3.max(values)])
+                            .nice()
+                            .range([barChartHeight, 0]);
+
+                        // Create the X axis
+                        chartGroup.append("g")
+                            .attr("transform", `translate(0,${barChartHeight})`)
+                            .call(d3.axisBottom(x).tickFormat(d => d).tickValues([selectedYear]));
+
+                        // Create the Y axis
+                        chartGroup.append("g")
+                            .call(d3.axisLeft(y).ticks(5));
+
+                        // Create the bars
+                        const bars = chartGroup.selectAll(".bar")
+                            .data(years)
+                            .join("rect")
+                            .attr("class", "bar")
+                            .attr("x", d => x(d))
+                            .attr("y", d => y(yearlyData[d].length))
+                            .attr("width", x.bandwidth())
+                            .attr("height", d => barChartHeight - y(yearlyData[d].length))
+                            .style("fill", d => d === chartTitle.text().split(" ")[0] ? "steelblue" : "#bbb")
+                            .style("stroke", d => d === chartTitle.text().split(" ")[0] ? "black" : "none")
+                            .style("stroke-width", 2);
+
+                        chartGroup.selectAll(".bar")
+                            .style("fill", d => d == chartTitle.text().split(" ")[0] ? "steelblue" : "#bbb")
+                            .style("stroke", d => d == chartTitle.text().split(" ")[0] ? "black" : "none")
+                            .style("stroke-width", d => d == chartTitle.text().split(" ")[0] ? 2 : 0);
+
+                        let barYear = 2021;
+                        bars.on("mouseover", function (event, d) {
                             d3.select(this)
-                                .transition()
-                                .attr("r", 3)
-                                .style("opacity", 0.6);
+                                .style("fill", "orange")
+                                .style("stroke", "black")
+                                .style("stroke-width", 2);
 
-                            d3.select(".tooltip").remove();
+                            yearLabel.transition().duration(200)
+                                .style("opacity", 1)
+                                .text(d);
+                            barYear = d;
+
+                            valueLabel.transition().duration(200)
+                                .style("opacity", 1)
+                                .text(yearlyData[d].length)
+                                .attr("x", x(d) + x.bandwidth() / 2)
+                                .attr("y", y(yearlyData[d].length) - 5)
+                                .attr("text-anchor", "middle");
+
+                            tooltip.html(`
+                                <strong>School:</strong> ${tooltipSchoolName}<br>
+                                <strong>Players:</strong> ${yearlyData[d].join(", ")}
+                            `);
+
                         })
+                            .on("mouseout", function () {
+                                const highlight = barYear == chartTitle.text().split(" ")[0];
+
+                                // Reset the bar color when the mouse leaves
+                                d3.select(this)
+                                    .style("fill", d => highlight ? "steelblue" : "#bbb")
+                                    .style("stroke", d => highlight ? "black" : "none")
+                                    .style("stroke-width", 2);
+
+                                // Hide the year text when the mouse leaves
+                                yearLabel.transition().duration(200)
+                                    .style("opacity", 0);  // Make the year text invisible again
+
+                                // Hide the value text when the mouse leaves
+                                valueLabel.transition().duration(200)
+                                    .style("opacity", 0);  // Make the value text invisible again
+                            })
+
+                        const yearLabel = chartGroup.append("text")
+                            .attr("class", "yearLabel")
+                            .attr("x", barChartWidth / 2)
+                            .attr("y", barChartHeight + 30)
+                            .attr("text-anchor", "middle")
+                            .style("font-size", "16px")
+                            .style("opacity", 0);
+
+                        const valueLabel = chartGroup.append("text")
+                            .attr("class", "valueLabel")
+                            .attr("x", barChartWidth / 2)
+                            .attr("y", barChartHeight - 10)
+                            .attr("text-anchor", "middle")
+                            .style("font-size", "16px")
+                            .style("opacity", 0);
+
+                        event.stopPropagation();
+                    })
+
+                    svg.on("click", function (event, d) {
+                        circles.transition().style("opacity", 0.6).attr("r", 3);
+                        d3.select(".tooltip").remove();
+                        d3.select(".bar-chart").remove();
+                    });
 
                     // Sourced from lecture: https://jeffrz.github.io/info3300-fa2024/notes/24.10.21.notes.htm
                     viewport.selectAll(".state").on("click", clicked);
@@ -449,7 +599,13 @@
                 function mapZoomed({ transform }) {
                     k = transform.k;
                     svg.select('.legend').style('opacity', k > 1 ? 0 : 1);
-                    viewport.selectAll("circle.school-point").style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
+                    const circles = viewport.selectAll("circle.school-point");
+                    circles.style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
+                    if (k < 2) {
+                        circles.transition().style("opacity", 0.6).attr("r", 3);
+                        d3.select(".tooltip").remove();
+                        d3.select(".bar-chart").remove();
+                    }
 
                     viewport.attr("transform", transform.toString());
                 }
@@ -459,9 +615,6 @@
             };
 
             requestData();
-
-            // TODO (Bahaa): Option 1: Zoom-in hides legend, Option 2: Zoom-in minimizes (dynamically) the legend
-            // Went with Option 1 for now, mention in document and change if decide a different one
         </script>
     </p>
 
@@ -469,7 +622,8 @@
         Chart 2: School University Location To Draft Location</h2>
     <p style="font-family: 'Raleway', sans-serif; font-size: 18px; line-height: 1.6; color: #444; margin: 20px;">
         We wanted to see the relation between state that the players went to school and the location they ended up in
-        for their draft. <b>Click on a state </b> to see the different location players went to from that state! The thickness
+        for their draft. <b>Click on a state </b> to see the different location players went to from that state! The
+        thickness
         of the arrows is proportional to the number of draftees that went to that state! </p>
     <p id="chart2"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
