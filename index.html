@@ -922,7 +922,7 @@
                         selectedState = clickedState;
                     })
                     .on("mouseover", function (event, d) {
-                        if (!selectedState || selectedState.datum().id == d.id) return; // Skip hover if no state is selected
+                        if (!selectedState) return; // Skip hover if no state is selected
 
                         const hoveredState = IDMap.get(d.id).toUpperCase();
                         const outgoing = stateToStateMap.get(IDMap.get(selectedState.datum().id).toUpperCase());
