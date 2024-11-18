@@ -28,7 +28,6 @@
         .state {
             fill: white;
         }
-
     </style>
 </head>
 
@@ -58,20 +57,22 @@
                 .attr('height', svgHeight)
             // default for slider and display
             const defaultYear = 2021;
-            const chartTitle = svg
-                .append("text")
-                .attr("x", svgWidth / 2)
-                .attr("y", 20)
-                .attr("text-anchor", "middle")
-                .style("font-size", "24px")
-                .style("font-family", "Raleway, sans-serif")
-                .text(`${defaultYear} NFL Drafts`)
 
             const margin = { top: 20, right: 100, bottom: 20, left: 20 };
             const mapWidth = svgWidth - margin.left - margin.right;
             const mapHeight = svgHeight - margin.top - margin.bottom;
             const map = svg.append("g")
             const viewport = map.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            const chartTitle = svg
+                .append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 40)
+                .attr("text-anchor", "middle")
+                .style("font-size", "24px")
+                .style("font-family", "Raleway, sans-serif")
+                .style("font-weight", "bold")
+                .text(`${defaultYear} NFL Drafts`)
 
             // Define slider info and exclude years without data
             const sliderWidth = 300;
@@ -207,7 +208,7 @@
                 // State-id to name
                 const stateId = {}
                 stateIdData.forEach(state => {
-                    stateId[state.state_code] = state.state_name;
+                    stateId[state.state_code] = { name: state.state_name, abbr: state.state_short };
                 })
                 // Function to allow us to update colors on the map as year changes
                 const updateMapColors = function (selectedYear) {
@@ -227,16 +228,35 @@
                         .attr("class", "state")
                         .attr("note", d => d.id)
                         .attr("d", path)
-                        .attr("stroke", "#333")
+                        .attr("stroke", "gray")
                         .attr("stroke-width", 1)
                         .transition()
                         .duration(500)
                         .ease(d3.easeCubicInOut)
                         .style("fill", (d) => {
-                            const stateAbbr = stateId[d.id];
-                            const count = stateDraftees[stateAbbr]?.numPlayers || 0;
+                            const stateName = stateId[d.id]?.name;
+                            const count = stateDraftees[stateName]?.numPlayers || 0;
                             return colorScale(count);
                         });
+
+                    viewport.selectAll("text.state-label")
+                        .data(states.features)
+                        .join("text")
+                        .attr("class", "state-label")
+                        .attr("x", d => {
+                            const centroid = path.centroid(d); // Get the centroid of the state
+                            return centroid[0]; // x-coordinate
+                        })
+                        .attr("y", d => {
+                            const centroid = path.centroid(d); // Get the centroid of the state
+                            return centroid[1]; // y-coordinate
+                        })
+                        .attr("text-anchor", "middle")
+                        .style("font-size", "10px")
+                        .style("font-family", "Raleway, sans-serif")
+                        .style("font-weight", "bold")
+                        .style("fill", "gray")
+                        .text(d => stateId[d.id]?.abbr == 'DC' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
 
                     // Create legend
                     const legendWidth = 30;
