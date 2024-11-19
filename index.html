@@ -100,6 +100,7 @@
 
             // Add slider
             // Slider input element
+            let currentYear = validYears[validYears.length - 1]
             const slider = sliderContainer
                 .append('input')
                 .attr('type', 'range')
@@ -118,6 +119,7 @@
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
+                    currentYear = selectedYear; 
                     chartTitle.text(`${selectedYear} NFL Drafts`);
                 })
 
@@ -191,6 +193,7 @@
                 slider.on('pointerup', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
+                    currentYear = selectedYear;
 
                     const circles = viewport.selectAll("circle.school-point")
                     circles.transition().style("opacity", 0.6).attr("r", 3);
@@ -519,6 +522,11 @@
                             // Hide the value text when the mouse leaves
                             valueLabel.transition().duration(200)
                                 .style("opacity", 0);  // Make the value text invisible again
+                            tooltip.html(`
+                                <strong>School:</strong> ${tooltipSchoolName}<br>
+                                <strong>Players:</strong> ${yearlyData[selectedYear].join(", ")}
+                            `);
+                           
                         })
                         const yearLabel = chartGroup.append("text")
                             .attr("class", "yearLabel")
