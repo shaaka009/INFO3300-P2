@@ -222,7 +222,7 @@
                     }
                 })
 
-                // Pre-process state map --> map from year to state counts map
+                // Pre-process state map --> map from year to object containing school to players
                 const stateMap = new Map()
                 nflData.forEach(player => {
                     const draftYear = +player.draft_year;
