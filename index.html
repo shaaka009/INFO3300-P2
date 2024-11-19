@@ -88,6 +88,7 @@
             const minYear = 1967;
             const maxYear = 2021;
             const yearsWithoutData = [1988, 1996];
+
             // Create an array with all the years that have data, manual inspection yields that 1988 and 1996 don't have data. 
             const validYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => i + minYear)
                 .filter(year => !yearsWithoutData.includes(year));
@@ -205,14 +206,11 @@
                     d3.select(".tooltip").remove();
                     d3.select(".bar-chart").remove();
 
-                    // Update only on release to improve performance
                     updateMapColors(selectedYear);
                 });
 
                 const states = topojson.feature(usData, usData.objects.states);
-                // Create projection
                 const projection = d3.geoAlbersUsa().fitSize([mapWidth, mapHeight], states);
-                // GeoPath creation
                 const path = d3.geoPath().projection(projection);
 
                 // Common name to full university name
@@ -255,6 +253,7 @@
                 stateIdData.forEach(state => {
                     stateId[state.state_code] = { name: state.state_name, abbr: state.state_short };
                 })
+
                 // Function to allow us to update colors on the map as year changes
                 const updateMapColors = function (selectedYear) {
                     const year = parseInt(selectedYear)
@@ -302,6 +301,7 @@
                         .style("font-weight", "bold")
                         .style("fill", "gray")
                         .text(d => stateId[d.id]?.abbr == 'DC' || stateId[d.id]?.abbr == 'PR' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
+
                     // Create legend
                     const legendWidth = 30;
                     const legendHeight = 400;
@@ -447,8 +447,9 @@
                         const barChartHeight = 150;
                         const margin = { top: 20, right: 20, bottom: 30, left: 40 };
                         const tooltipBoundingBox = tooltip.node().getBoundingClientRect();
+
                         // Calculate position just below the tooltip
-                        const tooltipBottom = tooltipBoundingBox.bottom;  // Y position at the bottom of the tooltip
+                        const tooltipBottom = tooltipBoundingBox.bottom;
                         const barSvg = d3.select("body")
                             .append("svg")
                             .attr("class", "bar-chart")
@@ -470,15 +471,12 @@
                             .domain([0, d3.max(values)])
                             .nice()
                             .range([barChartHeight, 0]);
-                        // Create the X axis
                         chartGroup.append("g")
                             .attr("transform", `translate(0,${barChartHeight})`)
                             .attr("class", "x-axis")
                             .call(d3.axisBottom(x).tickFormat(d => d).tickValues([selectedYear]));
-                        // Create the Y axis
                         chartGroup.append("g")
                             .call(d3.axisLeft(y).ticks(5));
-                        // Create the bars
                         const bars = chartGroup.selectAll(".bar")
                             .data(years)
                             .join("rect")
@@ -522,12 +520,10 @@
                                 .style("fill", d => highlight ? "steelblue" : "#bbb")
                                 .style("stroke", d => highlight ? "black" : "none")
                                 .style("stroke-width", 2);
-                            // Hide the year text when the mouse leaves
                             yearLabel.transition().duration(200)
-                                .style("opacity", 0);  // Make the year text invisible again
-                            // Hide the value text when the mouse leaves
+                                .style("opacity", 0);
                             valueLabel.transition().duration(200)
-                                .style("opacity", 0);  // Make the value text invisible again
+                                .style("opacity", 0);
                             tooltip.html(`
                                 <strong>School:</strong> ${tooltipSchoolName}<br>
                                 <strong>Players:</strong> ${yearlyData[selectedYear].join(", ")}
@@ -608,9 +604,6 @@
             };
 
             requestData();
-
-            // TODO (Bahaa): Option 1: Zoom-in hides legend, Option 2: Zoom-in minimizes (dynamically) the legend
-            // Went with Option 1 for now, mention in document and change if decide a different one
         </script>
     </p>
 
