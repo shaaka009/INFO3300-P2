@@ -33,6 +33,10 @@
         .state {
             fill: white;
         }
+
+        .x-axis .tick {
+            display: none;
+        }
     </style>
 </head>
 
@@ -50,7 +54,8 @@
         schools and the players! You can also <b>use the slider </b>to check out different years! The different color
         hues
         represent the density of players from that state. Explore different years and see the trends of certain states!
-        <b> Click on the different dots </b> to see players from different years for a speciifc school and <b> hover over the bars</b> to see more!
+        <b> Click on the different dots </b> to see players from different years for a specific school and <b> hover
+            over the bars</b> to see more!
     </p>
     <p id="chart1"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
@@ -119,7 +124,7 @@
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
-                    currentYear = selectedYear; 
+                    currentYear = selectedYear;
                     chartTitle.text(`${selectedYear} NFL Drafts`);
                 })
 
@@ -468,6 +473,7 @@
                         // Create the X axis
                         chartGroup.append("g")
                             .attr("transform", `translate(0,${barChartHeight})`)
+                            .attr("class", "x-axis")
                             .call(d3.axisBottom(x).tickFormat(d => d).tickValues([selectedYear]));
                         // Create the Y axis
                         chartGroup.append("g")
@@ -526,7 +532,7 @@
                                 <strong>School:</strong> ${tooltipSchoolName}<br>
                                 <strong>Players:</strong> ${yearlyData[selectedYear].join(", ")}
                             `);
-                           
+
                         })
                         const yearLabel = chartGroup.append("text")
                             .attr("class", "yearLabel")
