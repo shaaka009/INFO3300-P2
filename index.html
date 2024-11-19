@@ -115,7 +115,7 @@
                 .style('outline', 'none')
                 .style('border-radius', '5px')
                 .style('position', 'relative')
-                .style('z-index', 2)
+                .style('margin', '0px')
                 .on('input', function () {
                     const selectedYearIndex = this.value;
                     const selectedYear = validYears[selectedYearIndex];
@@ -140,24 +140,29 @@
                 .style('transform', 'translateX(30%)')
                 .style('font-size', '14px')
                 .text(maxYear);
+
+            const sliderOffset = 8;
             sliderContainer.append('div')
                 .style('position', 'absolute')
                 .style('top', `${sliderHeight * 1.4}px`)
-                .style('left', `${6}px`)
+                .style('left', `${sliderOffset}px`)
                 .style('width', '1px')
                 .style('height', '10px')
                 .style('background', '#333');
             sliderContainer.append('div')
                 .style('position', 'absolute')
                 .style('top', `${sliderHeight * 1.4}px`)
-                .style('left', `${sliderWidth - 6}px`)
+                .style('right', `${sliderOffset}px`)
                 .style('width', '1px')
                 .style('height', '10px')
                 .style('background', '#333');
 
             for (let year = minYear; year <= maxYear; year++) {
                 if (!yearsWithoutData.includes(year)) {
-                    const position = ((year - minYear) / (maxYear - minYear)) * sliderWidth;
+                    const skip = yearsWithoutData.filter(d => d < year).length;
+                    const tickSliderWidth = sliderWidth - 2 * sliderOffset;
+                    const sliderRatio = (year - skip - minYear) / (maxYear - minYear - yearsWithoutData.length);
+                    const position = sliderRatio * tickSliderWidth + sliderOffset;
 
                     // Add tick label for every 5 years for readability
                     if (year % 5 === 0 && year > 1970 && year < 2020) {
