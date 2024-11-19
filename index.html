@@ -18,12 +18,7 @@
         }
 
         #arrows {
-            marker-end: url(#arrowhead);
             pointer-events: none;
-        }
-
-        #arrows-legend {
-            marker-end: url(#arrowhead-legend)
         }
 
         #point-value {
@@ -634,6 +629,7 @@
                     case 6: return [-10, 10];
                     case 12: return [40, 0];
                     case 16: return [0, 40];
+                    case 17: return [-5, 0];
                     case 22: return [-15, 0];
                     case 24: return [5, -5];
                     case 26: return [25, 30];
@@ -806,7 +802,7 @@
             const chartTitle2 = svg2
                 .append("text")
                 .attr("x", C2width / 2)
-                .attr("y", 20)
+                .attr("y", 30)
                 .attr("text-anchor", "middle")
                 .style("font-size", "24px")
                 .style("font-family", "Raleway, sans-serif")
@@ -881,11 +877,12 @@
 
                 });
 
-                // Domain will be a percent of the whole, range will be from 0 width to 40 width arrows
-                console.log(max);
-                const widthScale = d3.scaleLinear().domain([0, max])
+                // Domain will be a percent of the whole, range will be from 0 width to 10 width arrows
+                const widthScale = d3.scaleLinear().domain([1, max])
                     .range([2, 15]);
-
+                const colorScale2 = d3.scaleSequential()
+                    .domain([0, max])
+                    .interpolator(d3.interpolateRgbBasis(d3.schemeYlOrRd[9].slice(3)));
                 let hoverFlag = false;
 
                 let clickedState = null;
@@ -925,7 +922,7 @@
                                 .attr("transform", "scale(1)");
                             selectedState = null;
                             svg2.selectAll("#arrows").remove();
-                            svg2.selectAll("arrowhead").remove();
+                            svg2.selectAll(".arrow-heads").remove();
                             svg2.selectAll("#point-value").remove();
                             hoverFlag = false;
                             return;
@@ -940,7 +937,7 @@
                                 .attr("stroke-width", 1)
                                 .attr("transform", "scale(1)");
                             svg2.selectAll("#arrows").remove();
-                            svg2.selectAll("#arrowhead").remove();
+                            svg2.selectAll(".arrow-heads").remove();
                             svg2.selectAll("#point-value").remove();
 
                         }
@@ -966,7 +963,7 @@
                         outgoing = stateToStateMap.get(IDMap.get(d.id).toUpperCase());
 
                         // Arrow drawing function
-                        function drawArrow(init, term, total, partial) {
+                        function drawArrow(init, term, total, partial, id) {
 
                             let initx = init[0];
                             let inity = init[1];
@@ -975,11 +972,8 @@
                             let termy = term[1];
 
                             // In the case we are drawing an arrow from a state to itself
-                            if (initx == termx && inity == termy) {
-
-
-
-                            } else {
+                            if (initx == termx && inity == termy) { }
+                            else {
 
                                 let distance = Math.pow(Math.pow((initx - termx), 2) + Math.pow((inity - termy), 2), 0.5);
 
@@ -989,7 +983,7 @@
                                 let arrow = svg2.append("path")
                                     .attr("id", "arrows")
                                     .attr("d", `M ${initx} ${inity} A ${2 * distance} ${2 * distance} 0 0 ${sweepFlag} ${termx} ${termy}`)
-                                    .attr("stroke", "#e07a5f")
+                                    .attr("stroke", colorScale2(partial))
                                     .attr("stroke-width", widthScale(partial))
                                     .attr("opacity", 0.5)
                                     .attr("fill", "none");
@@ -1003,8 +997,10 @@
                                     .duration(1000)
                                     .attr("stroke-dashoffset", 0);
 
-                                svg2.append("defs").append("marker")
-                                    .attr("id", "arrowhead")
+                                const markerId = `arrow-${id}`;
+                                const marker = svg2.append("defs").append("marker")
+                                    .attr("id", markerId)
+                                    .attr("class", "arrow-heads")
                                     .attr("viewBox", "0 -5 10 15")
                                     .attr("refX", 10)
                                     .attr("refY", 0)
@@ -1013,11 +1009,14 @@
                                     .attr("orient", "auto")
                                     .append("path")
                                     .attr("d", "M0,-5L13,0L0,5")
-                                    .attr("fill", "#e07a5f")
+                                    .attr("fill", colorScale2(partial))
                                     .attr("transform", "scale(0)")
                                     .transition()
                                     .duration(1000)
                                     .attr("transform", "scale(1)");
+
+                                arrow.attr("marker-end", `url(#arrow-${id})`);
+
                             }
                         }
 
@@ -1052,7 +1051,7 @@
                                     const destMidX = ((destBounds[1][0] + destBounds[0][0]) / 2) + correction[0];
                                     const destMidY = ((destBounds[1][1] + destBounds[0][1]) / 2) + correction[1];
 
-                                    drawArrow([midX, midY], [destMidX, destMidY], sum, drafts);
+                                    drawArrow([midX, midY], [destMidX, destMidY], sum, drafts, dest.state_code);
 
                                 }
                             });
@@ -1086,27 +1085,14 @@
                             .style("left", `${event.pageX + 10}px`);
                     });
 
-
-                const yScale = d3.scaleLinear().domain([0, 318]).range([C2height - 300, 0]);
-                let leftAxis = d3.axisLeft(yScale);
+                const yScale = d3.scaleLinear().domain([1, 318]).range([C2height - 300, 0]);
+                let leftAxis = d3.axisLeft(yScale).ticks(7);
 
                 // Draw legend 
                 svg2.append('g')
                     .attr('class', 'y axis')
                     .attr('transform', `translate(${C2width + 35},150)`)
                     .call(leftAxis);
-
-                svg2.append("defs").append("marker")
-                    .attr("id", "arrowhead-legend")
-                    .attr("viewBox", "0 -5 10 15")
-                    .attr("refX", 10)
-                    .attr("refY", 0)
-                    .attr("markerWidth", 6)
-                    .attr("markerHeight", 6)
-                    .attr("orient", "auto")
-                    .append("path")
-                    .attr("d", "M0,-5L13,0L0,5")
-                    .attr("fill", "#e07a5f");
 
                 svg2.append("text")
                     .attr("x", C2width + 80)
@@ -1118,16 +1104,31 @@
 
                 let num_arrows = 6
                 for (let i = 0; i < num_arrows; i++) {
-                    svg2.append("line")
+                    let legendArrow = svg2.append("line")
                         .attr("id", "arrows-legend")
                         .attr("x1", C2width + 50)
                         .attr("y1", 160 + i * 60)
                         .attr("x2", C2width + 135)
                         .attr("y2", 160 + i * 60)
-                        .attr("stroke", "#e07a5f")
-                        .attr("stroke-width", widthScale((6 - i) * 53))
+                        .attr("stroke", colorScale2(((num_arrows - i) * 53)))
+                        .attr("stroke-width", widthScale((num_arrows - i) * 53))
                         .attr("opacity", 0.5)
                         .attr("fill", "none");
+
+                    const legendMarkerId = `legend-${i}`;
+                    const legendMarker = svg2.append("defs").append("marker")
+                        .attr("id", legendMarkerId)
+                        .attr("viewBox", "0 -5 10 15")
+                        .attr("refX", 10)
+                        .attr("refY", 0)
+                        .attr("markerWidth", 6)
+                        .attr("markerHeight", 6)
+                        .attr("orient", "auto")
+                        .append("path")
+                        .attr("d", "M0,-5L13,0L0,5")
+                        .attr("fill", colorScale2(((num_arrows - i) * 53)));
+
+                    legendArrow.attr("marker-end", `url(#legend-${i})`);
                 }
 
             });
