@@ -263,7 +263,6 @@
                 // Function to allow us to update colors on the map as year changes
                 const updateMapColors = function (selectedYear) {
                     const year = parseInt(selectedYear)
-                    // Handle empty data case still 
                     const stateDraftees = stateMap.get(year) || {}
 
                     // Update the color scale based on the counts for the selected year
@@ -295,11 +294,11 @@
                         .join("text")
                         .attr("class", "state-label")
                         .attr("x", d => {
-                            const centroid = path?.centroid(d); // Get the centroid of the state
+                            const centroid = path?.centroid(d);
                             return isNaN(centroid[0]) ? 0 : centroid[0];
                         })
                         .attr("y", d => {
-                            const centroid = path?.centroid(d); // Get the centroid of the state
+                            const centroid = path?.centroid(d);
                             return isNaN(centroid[1]) ? 0 : centroid[1];
                         })
                         .attr("text-anchor", "middle")
