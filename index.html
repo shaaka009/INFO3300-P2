@@ -254,6 +254,12 @@
                     stateId[state.state_code] = { name: state.state_name, abbr: state.state_short };
                 })
 
+                // State name to id
+                const stateName = {}
+                stateIdData.forEach(state => {
+                    stateName[state.state_name] = state.state_code;
+                })
+
                 // Function to allow us to update colors on the map as year changes
                 const updateMapColors = function (selectedYear) {
                     const year = parseInt(selectedYear)
@@ -271,6 +277,7 @@
                         .join("path")
                         .attr("class", "state")
                         .attr("note", d => d.id)
+                        .attr("id", d => `state-${d.id}`)
                         .attr("d", path)
                         .attr("stroke", "gray")
                         .attr("stroke-width", 1)
@@ -300,7 +307,10 @@
                         .style("font-family", "Raleway, sans-serif")
                         .style("font-weight", "bold")
                         .style("fill", "gray")
-                        .text(d => stateId[d.id]?.abbr == 'DC' || stateId[d.id]?.abbr == 'PR' ? '' : stateId[d.id]?.abbr); // Add state abbreviation or name
+                        .text(d => stateId[d.id]?.abbr == 'DC' || stateId[d.id]?.abbr == 'PR' ? '' : stateId[d.id]?.abbr)
+                        .on("click", function (event, d) {
+                            d3.select(`#state-${d.id}`).dispatch('click');
+                        })
 
                     // Create legend
                     const legendWidth = 30;
@@ -366,9 +376,11 @@
                             const schoolLongitude = playerSchool["Longitude location of institution"];
                             const schoolLatitude = playerSchool["Latitude location of institution"];
                             const schoolProjection = projection([schoolLongitude, schoolLatitude]);
+                            const stateId = stateName[state];
 
                             return {
                                 state,
+                                stateId,
                                 schoolLongitude,
                                 schoolLatitude,
                                 schoolProjection,
@@ -398,7 +410,7 @@
                                 .attr("cx", d => d.cx)
                                 .attr("cy", d => d.cy)
                         )
-                        .style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
+                        .style('transform', k > 1.5 ? 'scale(1)' : 'scale(0)');
 
                     // Add interactivity
                     circles.on("click", function (event, d) {
@@ -406,26 +418,12 @@
                         d3.select(".bar-chart").remove();
                         circles.transition().style("opacity", 0.2).attr("r", 3);
 
+                        d3.select(`#state-${d.stateId}`).dispatch('click');
+
                         d3.select(this)
                             .transition()
                             .attr("r", 6)
                             .style("opacity", 1);
-
-                        // Tooltip display
-                        const tooltipSchoolName = d.schoolName;
-                        const tooltip = d3.select("body").append("div")
-                            .attr("class", "tooltip")
-                            .style("position", "absolute")
-                            .style("background", "#f9f9f9")
-                            .style("border", "1px solid #ccc")
-                            .style("padding", "5px")
-                            .style("opacity", 1)
-                            .html(`
-                                    <strong>School:</strong> ${tooltipSchoolName}<br>
-                                    <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
-                                `);
-                        tooltip.style("left", `${event.pageX + 50}px`)
-                            .style("top", `${event.pageY - 30}px`);
 
                         // Bar chart data
                         const nflSchoolId = d.nflSchoolId;
@@ -446,21 +444,21 @@
                         const barChartWidth = 350;
                         const barChartHeight = 150;
                         const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-                        const tooltipBoundingBox = tooltip.node().getBoundingClientRect();
 
-                        // Calculate position just below the tooltip
-                        const tooltipBottom = tooltipBoundingBox.bottom;
                         const barSvg = d3.select("body")
                             .append("svg")
                             .attr("class", "bar-chart")
                             .attr("width", barChartWidth + margin.left + margin.right)
                             .attr("height", barChartHeight + margin.top + margin.bottom)
                             .style("position", "absolute")
-                            .style("left", `${event.pageX + 50}px`)
-                            .style("top", `${event.pageY + 40}px`)
+                            .style("right", `20px`)
+                            .style("bottom", `50px`)
                             .style("background", "#f9f9f9")
                             .style("border", "1px solid #ccc")
-                            .style("padding", "10px");
+                            .style("padding", "10px")
+                            .style("box-shadow", "0px 4px 6px rgba(0, 0, 0, 0.3)")
+                            .style("border-top-left-radius", "10px")
+                            .style("border-top-right-radius", "10px");
                         const chartGroup = barSvg.append("g")
                             .attr("transform", `translate(${margin.left},${margin.top})`);
                         const x = d3.scaleBand()
@@ -492,6 +490,29 @@
                             .style("fill", d => d == chartTitle.text().split(" ")[0] ? "steelblue" : "#bbb")
                             .style("stroke", d => d == chartTitle.text().split(" ")[0] ? "black" : "none")
                             .style("stroke-width", d => d == chartTitle.text().split(" ")[0] ? 2 : 0);
+
+                        // Tooltip display
+                        const tooltipSchoolName = d.schoolName;
+                        const tooltip = d3.select("body").append("div")
+                            .attr("class", "tooltip")
+                            .style("position", "absolute")
+                            .style("background", "#f9f9f9")
+                            .style("border", "1px solid #ccc")
+                            .style("padding", "5px")
+                            .style("opacity", 1)
+                            .style("width", `${barChartWidth + 70}px`)
+                            .style("word-wrap", "break-word")
+                            .style("white-space", "normal")
+                            .style("box-shadow", "0px 4px 6px rgba(0, 0, 0, 0.3)")
+                            .style("border-bottom-left-radius", "10px")
+                            .style("border-bottom-right-radius", "10px")
+                            .html(`
+                                <strong>School:</strong> ${tooltipSchoolName}<br>
+                                <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
+                            `);
+                        tooltip.style("right", `20px`)
+                            .style("top", `640px`);
+
                         let barYear = 2021;
                         bars.on("mouseover", function (event, d) {
 
@@ -589,8 +610,8 @@
                     svg.select('.legend').style('opacity', k > 1 ? 0 : 1);
 
                     const circles = viewport.selectAll("circle.school-point");
-                    circles.style('transform', k > 2 ? 'scale(1)' : 'scale(0)');
-                    if (k < 2) {
+                    circles.style('transform', k > 1.5 ? 'scale(1)' : 'scale(0)');
+                    if (k < 1.5) {
                         circles.transition().style("opacity", 0.6).attr("r", 3);
                         d3.select(".tooltip").remove();
                         d3.select(".bar-chart").remove();
@@ -613,7 +634,8 @@
         We wanted to see the relation between state that the players went to school and the location they ended up in
         for their draft. <b>Click on a state </b> to see the different location players went to from that state! The
         thickness
-        of the arrows is proportional to the number of draftees that went to that state! <b>Hover over the other states </b>to see the number of draftees that went there when having a state selected!</p>
+        of the arrows is proportional to the number of draftees that went to that state! <b>Hover over the other states
+        </b>to see the number of draftees that went there when having a state selected!</p>
     <p id="chart2"
         style="margin:1in; display: flex; flex-direction: column; align-items: center; justify-content: center;">
 
