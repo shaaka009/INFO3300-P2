@@ -450,8 +450,8 @@
                             .attr("width", barChartWidth + margin.left + margin.right)
                             .attr("height", barChartHeight + margin.top + margin.bottom)
                             .style("position", "absolute")
-                            .style("right", `20px`)
-                            .style("bottom", `50px`)
+                            .style("right", `30px`)
+                            .style("top", `400px`)
                             .style("background", "#f9f9f9")
                             .style("border", "1px solid #ccc")
                             .style("padding", "10px")
@@ -509,12 +509,11 @@
                                 <strong>School:</strong> ${tooltipSchoolName}<br>
                                 <strong>Players:</strong> ${d.players.map(p => p.player_name).join(", ")}
                             `);
-                        tooltip.style("right", `20px`)
-                            .style("top", `640px`);
+                        tooltip.style("right", `30px`)
+                            .style("top", `620px`);
 
                         let barYear = 2021;
                         bars.on("mouseover", function (event, d) {
-
                             d3.select(this)
                                 .style("fill", "orange")
                                 .style("stroke", "black")
